@@ -8,5 +8,6 @@
 #include "types.hpp"
 #include "sha1.hpp"
 #include "arc4.hpp"
+#include "crypto.hpp"
 
 using namespace std;

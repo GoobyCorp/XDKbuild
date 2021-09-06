@@ -1,3 +1,5 @@
 /*.o
+/*.sh
+/*.bin
 /*.code-workspace
 /xdkbuild

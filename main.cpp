@@ -47,12 +47,15 @@ int char2int(char input)
 	// throw std::invalid_argument("Invalid input string");
 }
 
-int hex2data(PCHAR hex, PBYTE target)
+int HexDecode(PCHAR pcHex, PBYTE pbOut)
 {
-	while(*hex && hex[1])
+	if(strlen(pcHex) % 2 != 0)
+		return 0;
+
+	while(*pbOut && pcHex[1])
 	{
-		*(target++) = char2int(*hex) * 16 + char2int(hex[1]);
-		hex += 2;
+		*(pbOut++) = char2int(*pcHex) * 16 + char2int(pcHex[1]);
+		pcHex += 2;
 	}
 	return 0;
 }
@@ -66,7 +69,7 @@ DWORD GetFileSize(FILE* fptr)
 	}
 	fseek(fptr, 0 , SEEK_END);
 	len = ftell(fptr);
-	rewind (fptr);
+	rewind(fptr);
 	return len;
 }
 
@@ -74,7 +77,7 @@ VOID DumpBufferHex(PCHAR filename, PVOID buffer, int size)
 {
 	FILE* fptr;
 	printf("writing 0x%x bytes to %s...", size, filename);
-	if((buffer != NULL)&&(filename != NULL)&&(size != 0))
+	if((buffer != NULL) && (filename != NULL) && (size != 0))
 	{
 		fptr = fopen(filename, "wb");
 		if(fptr != NULL)
@@ -120,45 +123,6 @@ PBYTE ReadFile(PCHAR fname, PDWORD pdwSize)
 	return buf;
 }
 
-VOID XeCryptSha(PBYTE pbIn0, DWORD cbIn0, PBYTE pbIn1, DWORD cbIn1, PBYTE pbIn2, DWORD cbIn2, PBYTE pbOut, DWORD cbOut)
-{
-	BYTE hash[0x14];
-	sha1_context ctx;
-	sha1_init(&ctx);
-	sha1_starts(&ctx);
-	sha1_update(&ctx, pbIn0, cbIn0);
-	if(pbIn1 != NULL && cbIn1 != 0)
-		sha1_update(&ctx, pbIn1, cbIn1);
-	if(pbIn2 != NULL && cbIn2 != 0)
-		sha1_update(&ctx, pbIn2, cbIn2);
-	sha1_finish(&ctx, hash);
-	sha1_free(&ctx);
-	memcpy(pbOut, hash, cbOut);
-}
-
-VOID XeCryptHmacSha(PBYTE pbKey, DWORD cbKey, PBYTE pbIn0, DWORD cbIn0, PBYTE pbIn1, DWORD cbIn1, PBYTE pbIn2, DWORD cbIn2, PBYTE pbOut, DWORD cbOut) {
-	BYTE hash[0x14];
-	sha1_context ctx;
-	sha1_init(&ctx);
-	sha1_hmac_starts(&ctx, pbKey, cbKey);
-	sha1_hmac_update(&ctx, pbIn0, cbIn0);
-	if(pbIn1 != NULL && cbIn1 != 0)
-		sha1_hmac_update(&ctx, pbIn1, cbIn1);
-	if(pbIn2 != NULL && cbIn2 != 0)
-		sha1_hmac_update(&ctx, pbIn2, cbIn2);
-	sha1_hmac_finish(&ctx, hash);
-	sha1_free(&ctx);
-	memcpy(pbOut, hash, cbOut);
-}
-
-VOID XeCryptRc4(PBYTE pbKey, DWORD cbKey, PBYTE pbIn, DWORD cbIn, PBYTE pbOut) {
-	arc4_context ctx;
-	arc4_init(&ctx);
-	arc4_setup(&ctx, pbKey, cbKey);
-	arc4_crypt(&ctx, cbIn, pbIn, pbOut);
-	arc4_free(&ctx);
-}
-
 DWORD GetPageEcc(PBYTE datc, PBYTE spare)
 {
 	DWORD i = 0, val = 0, v = 0;
@@ -202,19 +166,19 @@ VOID FixFuses()
 	QWORD testfuse;
 	QWORD fuse;
    
-	patch_slot_start = bswap_32(*(PDWORD)(flash + 0xC));
-	patch_slot_sz = bswap_32(*(PDWORD)(flash + 0x70));
-	vfuse_start = patch_slot_start+patch_slot_sz;
+	patch_slot_start = bswap32(*(PDWORD)(flash + 0xC));
+	patch_slot_sz = bswap32(*(PDWORD)(flash + 0x70));
+	vfuse_start = patch_slot_start + patch_slot_sz;
 	
-	testfuse = bswap_64(*(PDWORD)(flash + vfuse_start));
-	if(testfuse != 0xc0ffffffffffffff && ctr != f_sz) {
-		while(testfuse != 0xc0ffffffffffffff) {
-			testfuse = bswap_64(*(PQWORD)(flash + ctr));
+	testfuse = bswap64(*(PQWORD)(flash + vfuse_start));
+	if(testfuse != 0xC0FFFFFFFFFFFFFF && ctr != f_sz) {
+		while(testfuse != 0xC0FFFFFFFFFFFFFF) {
+			testfuse = bswap64(*(PQWORD)(flash + ctr));
 			ctr += 4;
 		}
 			
-		printf("Virtaul Fuses Found At 0x%X\n:", ctr-4);
-		ctr = ctr-4;
+		printf("Virtual Fuses Found At 0x%X\n:", ctr - 4);
+		ctr -= 4;
 		new_addr[0] = ctr - patch_slot_start >> 24;
 		new_addr[1] = ctr - patch_slot_start << 8 >> 24;
 		new_addr[2] = ctr - patch_slot_start << 16 >> 24;
@@ -222,14 +186,14 @@ VOID FixFuses()
 		memcpy(&flash[0x70], new_addr, 4);
 	}
 
-	patch_slot_sz = bswap_32(*(PDWORD)(flash + 0x70));
+	patch_slot_sz = bswap32(*(PDWORD)(flash + 0x70));
 	vfuse_start = patch_slot_start + patch_slot_sz;
 	
 	memset(&flash[vfuse_start + 56], 0, 40);
 	
-	printf("Virtual Fuses Set To:\n");    
+	printf("Virtual Fuses Set To:\n");
 	while(rows != 12) {
-	   fuse = bswap_64(*(PQWORD)(flash + vfuse_start + rowplus));
+	   fuse = bswap64(*(PQWORD)(flash + vfuse_start + rowplus));
 	   printf("Fuseset %02d: %016llX\n", rows, fuse);
 	   rows++;
 	   rowplus += 8;         
@@ -238,46 +202,47 @@ VOID FixFuses()
 
 VOID GetLdrHdrs()
 {
-	ldr_b_start = bswap_32(*(PDWORD)(flash + 0x8));
-	ldr_b_end = bswap_32(*(PDWORD)(flash + ldr_b_start + 0xC));
+	ldr_b_start = bswap32(*(PDWORD)(flash + 0x8));
+	ldr_b_end = bswap32(*(PDWORD)(flash + ldr_b_start + 0xC));
 	
-	ldr_bb_start = ldr_b_start+ldr_b_end;
-	ldr_bb_end = bswap_32(*(PDWORD)(flash + ldr_bb_start + 0xC)); 
+	ldr_bb_start = ldr_b_start + ldr_b_end;
+	ldr_bb_end = bswap32(*(PDWORD)(flash + ldr_bb_start + 0xC));
 
-	ldr_d_start = ldr_bb_start+ldr_bb_end;
-	ldr_d_end = bswap_32(*(PDWORD)(flash + ldr_d_start + 0xC)); 
+	ldr_d_start = ldr_bb_start + ldr_bb_end;
+	ldr_d_end = bswap32(*(PDWORD)(flash + ldr_d_start + 0xC));
 
-	ldr_e_start = ldr_d_start+ldr_d_end;
-	ldr_e_end = bswap_32(*(PDWORD)(flash + ldr_e_start + 0xC));
-}
-
-VOID GetLdrKeysRetail()
-{
-	XeCryptHmacSha(bl_key, 0x10, &flash[ldr_b_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_b_key, 0x10);
-	memset(zero_key, 0, 0x10);
-	XeCryptHmacSha(ldr_b_key, 0x10, &flash[ldr_bb_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_bb_key, 0x10);
-	XeCryptHmacSha(ldr_bb_key, 0x10, &flash[ldr_d_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_d_key, 0x10);
-	XeCryptHmacSha(ldr_d_key, 0x10, &flash[ldr_e_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_e_key, 0x10);
+	ldr_e_start = ldr_d_start + ldr_d_end;
+	ldr_e_end = bswap32(*(PDWORD)(flash + ldr_e_start + 0xC));
 }
 
 VOID DecryptLdrs()
 {
-	XeCryptRc4(ldr_d_key, 0x10, &flash[ldr_d_start + 0x20], ldr_d_end-0x20, &flash[ldr_d_start + 0x20]);
-	XeCryptRc4(ldr_e_key, 0x10, &flash[ldr_e_start + 0x20], ldr_e_end-0x20, &flash[ldr_e_start + 0x20]);
+	Crypto::XeCryptRc4(ldr_d_key, 0x10, &flash[ldr_d_start + 0x20], ldr_d_end-0x20, &flash[ldr_d_start + 0x20]);
+	Crypto::XeCryptRc4(ldr_e_key, 0x10, &flash[ldr_e_start + 0x20], ldr_e_end-0x20, &flash[ldr_e_start + 0x20]);
 }
 
-void GetLdrKeysDevkit()
+VOID GetLdrKeysRetail()
 {
-	XeCryptHmacSha(zero_key, 0x10, &ldr_c[0x10], 0x10, NULL, 0, NULL, 0, ldr_c_key, 0x10);
-	XeCryptHmacSha(ldr_c_key, 0x10, &ldr_d[0x10], 0x10, NULL, 0, NULL, 0, ldr_d_key, 0x10);
-	XeCryptHmacSha(ldr_d_key, 0x10, &ldr_e[0x10], 0x10, NULL, 0, NULL, 0, ldr_e_key, 0x10);
+	memset(zero_key, 0, 0x10);
+	Crypto::XeCryptHmacSha(bl_key, 0x10, &flash[ldr_b_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_b_key, 0x10);
+	Crypto::XeCryptHmacSha(ldr_b_key, 0x10, &flash[ldr_bb_start + 0x10], 0x10, zero_key, 0x10, NULL, 0, ldr_bb_key, 0x10);
+	Crypto::XeCryptHmacSha(ldr_bb_key, 0x10, &flash[ldr_d_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_d_key, 0x10);
+	Crypto::XeCryptHmacSha(ldr_d_key, 0x10, &flash[ldr_e_start + 0x10], 0x10, NULL, 0, NULL, 0, ldr_e_key, 0x10);
+}
+
+VOID GetLdrKeysDevkit()
+{
+	memset(zero_key, 0, 0x10);
+	Crypto::XeCryptHmacSha(zero_key, 0x10, &ldr_c[0x10], 0x10, NULL, 0, NULL, 0, ldr_c_key, 0x10);
+	Crypto::XeCryptHmacSha(ldr_c_key, 0x10, &ldr_d[0x10], 0x10, NULL, 0, NULL, 0, ldr_d_key, 0x10);
+	Crypto::XeCryptHmacSha(ldr_d_key, 0x10, &ldr_e[0x10], 0x10, NULL, 0, NULL, 0, ldr_e_key, 0x10);
 }
 
 VOID EncryptLdrs()
 {
-	XeCryptRc4(ldr_c_key, 0x10, &ldr_c[0x20], ldr_c_end - 0x20, &ldr_c[0x20]);
-	XeCryptRc4(ldr_d_key, 0x10, &ldr_d[0x20], ldr_d_end - 0x20, &ldr_d[0x20]);
-	XeCryptRc4(ldr_e_key, 0x10, &ldr_e[0x20], ldr_e_end - 0x20, &ldr_e[0x20]);
+	Crypto::XeCryptRc4(ldr_c_key, 0x10, &ldr_c[0x20], ldr_c_end - 0x20, &ldr_c[0x20]);
+	Crypto::XeCryptRc4(ldr_d_key, 0x10, &ldr_d[0x20], ldr_d_end - 0x20, &ldr_d[0x20]);
+	Crypto::XeCryptRc4(ldr_e_key, 0x10, &ldr_e[0x20], ldr_e_end - 0x20, &ldr_e[0x20]);
 }
 
 VOID BuildBootBlk()
@@ -291,14 +256,13 @@ VOID BuildBootBlk()
 	memcpy(&flash[ldr_b_start], boot_blk, boot_blk_sz);
 }    
 
-
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	// usage
 	if(argc != 4){
 		printf("Usage: XDKbuild v0.05b [input image file] [1bl_key] [sc_file]\n");
 		printf("By Xvistaman2005\n");
-		exit(0);
+		return ERR_NOT_ENOUGH_ARGS;
 	}
 	// flash file vars
 	printf("XDKbuild v0.05b By Xvistaman2005\n");
@@ -309,7 +273,7 @@ int main (int argc, char* argv[])
 	if(f == NULL) {
 		printf("Could not open input image file\n");
 		return ERR_CANT_OPEN_INPUT_FILE;
-	}    
+	}
 
 	f_sz = GetFileSize(f);
 
@@ -320,7 +284,7 @@ int main (int argc, char* argv[])
 
 	if(f_sz == 50331648)
 		fread(flash, f_sz, 0x01, f);
-	else if (f_sz == 17301504 || f_sz == 69206016){
+	else if (f_sz == 17301504 || f_sz == 69206016) {
 		while(i != f_sz) {
 			fread(&flash[x], 512, 0x01, f);
 			fread(&ecc[y], 16, 0x01, f);
@@ -353,11 +317,11 @@ int main (int argc, char* argv[])
 	if(f_sz == 50331648) {
 		printf("Image Type: eMMC Controller\n");
 		sfc = SFC_EMMC;
-	}		
+	}
 
 	//get keys from command line and conver then to hex data
 	sscanf(argv[2], "%s", bl_string);
-	hex2data((PCHAR)bl_key, bl_string);
+	HexDecode((PCHAR)bl_key, bl_string);
 	printf("Setting 1BL key as: %s\n", argv[2]);
 
 	//get loction of all ldrs in flash
@@ -378,11 +342,9 @@ int main (int argc, char* argv[])
 	if(scf == NULL) {
 		printf("Could not open SC bootloader file\n");
 		return ERR_CANT_OPEN_SC_FILE;
-	} 
+	}
 
-	fseek(scf, 0, SEEK_END);
-	ldr_c_end = ftell(scf);
-	rewind(scf);
+	ldr_c_end = GetFileSize(scf);
 
 	//setup sc buffer
 	ldr_c = (PBYTE)malloc(ldr_c_end);
@@ -396,19 +358,19 @@ int main (int argc, char* argv[])
 
 	//copy the decrpyted SD SE to there own buffers for crypto
 	memcpy(ldr_d, &flash[ldr_d_start], ldr_d_end);
-	memcpy(ldr_e, &flash[ldr_e_start], ldr_e_end); 
+	memcpy(ldr_e, &flash[ldr_e_start], ldr_e_end);
 
-	//setup devkit crpyto keys for SC SD SE ldrs
+	//setup devkit crypto keys for SC SD SE ldrs
 	GetLdrKeysDevkit();
-	printf("Calculating Devkit Encryption Keys\n");	
+	printf("Calculating Devkit Encryption Keys\n");
 
 	//encrypt the ldrs with devkit crypto keys
 	EncryptLdrs();
-	printf("Encrypting Bootloaders\n");	
+	printf("Encrypting Bootloaders\n");
 
 	//create new ldr chain    
 	BuildBootBlk();
-	printf("Building New Devkit Bootchain\n");	
+	printf("Building New Devkit Bootchain\n");
 
 
 	//set vufses cf ldv to 0x0 and print the vfuses
@@ -438,9 +400,9 @@ int main (int argc, char* argv[])
 		fwrite(&flash[xx], f_sz, 1, ff);
 	else {
 		while(out_sz != 1310720) {
-			XeCryptSha(&flash[xx], 512, NULL, 0, NULL, 0, ecc_hash, 0x10);
+			Crypto::XeCryptSha(&flash[xx], 512, NULL, 0, NULL, 0, ecc_hash, 0x10);
 			// memcpy(ecc_hash, sha, 0x10); 
-			sha_calc = bswap_32(*(PDWORD)ecc_hash);
+			sha_calc = bswap32(*(PDWORD)ecc_hash);
 			//   blk_num = getBeU32(&ecc[yy]);
 			//    blk_num = blk_num>>16;
 			if(sha_calc != sha_exp) {
@@ -466,15 +428,15 @@ int main (int argc, char* argv[])
 				if(sfc == SFC_SMALL_ON_SMALL) {
 					new_ecc[0] = blk_num_a;
 					new_ecc[1] = blk_num_b;
-					new_ecc[5] = 0xff;
+					new_ecc[5] = 0xFF;
 				}
 				if(sfc == SFC_SMALL_ON_BIG) {
 					new_ecc[1] = blk_num_a;
 					new_ecc[2] = blk_num_b;
-					new_ecc[5] = 0xff;
+					new_ecc[5] = 0xFF;
 				}
 				if(sfc == SFC_BIG_ON_BIG) {
-					new_ecc[0] = 0xff;
+					new_ecc[0] = 0xFF;
 					new_ecc[1] = blk_num_a;
 				}
 					
@@ -488,7 +450,7 @@ int main (int argc, char* argv[])
 			} else {
 				//    printf("Empty Page Found In Image Skipping ECC Check at Block Number\n", blk_num_a);    
 				fwrite(&flash[xx], 512, 1, ff);
-				memset(new_ecc, 0xff, 16);
+				memset(new_ecc, 0xFF, 16);
 				fwrite(new_ecc, 16, 1, ff);
 				
 				if(sfc == SFC_SMALL_ON_SMALL || sfc == SFC_SMALL_ON_BIG) {
@@ -497,7 +459,7 @@ int main (int argc, char* argv[])
 						pg_ctr = 0;
 					}
 					
-					if(blk_num_a == 0xff) {
+					if(blk_num_a == 0xFF) {
 						blk_num_b++;
 						blk_num_a = 0;
 					}
@@ -522,12 +484,12 @@ int main (int argc, char* argv[])
 
 	fclose(ff);
 	
-	free (flash);
-	free (ecc);
-	free (boot_blk);
-	free (ldr_d);
-	free (ldr_e);
-	free (ldr_c);
+	free(flash);
+	free(ecc);
+	free(boot_blk);
+	free(ldr_d);
+	free(ldr_e);
+	free(ldr_c);
 		
-	return 0; 
+	return ERR_NONE;
 }
