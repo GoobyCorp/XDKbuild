@@ -1,27 +1,23 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "sha1.h"
-#include "arc4.h"
+#include "stdafx.hpp"
 
-unsigned char* flash;
-unsigned char* ecc;
-unsigned char* boot_blk;
-unsigned char* ldr_d;
-unsigned char* ldr_e;
-unsigned char* ldr_c;
-unsigned char bl_key[0x10];
-unsigned char bl_string[0x20];
-unsigned char ldr_b_key[0x10];
-unsigned char zero_key[0x10];
-unsigned char ldr_bb_key[0x10];
-unsigned char ldr_d_key[0x10];
-unsigned char ldr_e_key[0x10];
-unsigned char ldr_c_key[0x10];    
-unsigned char hmac[0x40];
-unsigned char sha[0x40];
-unsigned char ecc_hash[0x10];
-unsigned char new_ecc[0x10];
+PBYTE flash;
+PBYTE ecc;
+PBYTE boot_blk;
+PBYTE ldr_d;
+PBYTE ldr_e;
+PBYTE ldr_c;
+BYTE bl_key[0x10];
+BYTE bl_string[0x20];
+BYTE ldr_b_key[0x10];
+BYTE zero_key[0x10];
+BYTE ldr_bb_key[0x10];
+BYTE ldr_d_key[0x10];
+BYTE ldr_e_key[0x10];
+BYTE ldr_c_key[0x10];
+BYTE hmac[0x40];
+BYTE sha[0x40];
+BYTE ecc_hash[0x10];
+BYTE new_ecc[0x10];
 
 
 int i=0;
@@ -41,7 +37,28 @@ int ldr_c_end;
 int boot_blk_sz;
 int sfc;
 
+int char2int(char input)
+{
+    if(input >= '0' && input <= '9')
+        return input - '0';
+    if(input >= 'A' && input <= 'F')
+        return input - 'A' + 10;
+    if(input >= 'a' && input <= 'f')
+        return input - 'a' + 10;
+    // throw std::invalid_argument("Invalid input string");
+}
 
+int hex2data(PCHAR hex, PBYTE target)
+{
+    while(*hex && hex[1])
+    {
+        *(target++) = char2int(*hex) * 16 + char2int(hex[1]);
+        hex += 2;
+    }
+    return 0;
+}
+
+/*
 int hex2data(unsigned char *data, const unsigned char *hexstring, unsigned int len)
 {
     unsigned const char *pos = hexstring;
@@ -71,6 +88,7 @@ int hex2data(unsigned char *data, const unsigned char *hexstring, unsigned int l
     
     return 0;
 }
+*/
 
 int getFileSize(FILE* fptr)
 {
@@ -114,13 +132,13 @@ void dump_buffer_hex(char* filename, void* buffer, int size)
 unsigned char* readFileToBuf(char* fname, int* len)
 {
     FILE* fin;
-    unsigned char* buf = NULL;
+    PBYTE buf = NULL;
     fin = fopen(fname, "rb");
     if(fin != NULL)
     {
         int sz = getFileSize(fin);
         printf("loading file %s 0x%x bytes...", fname, sz);
-        buf = (unsigned char*)malloc(sz);
+        buf = (PBYTE)malloc(sz);
         if(buf != NULL)
         {
             fread(buf, sz, 1, fin);
@@ -354,7 +372,7 @@ void encryptLdrs()
 void buildBootBlk()
 {
     boot_blk_sz=ldr_b_end+ldr_bb_end+ldr_c_end+ldr_d_end+ldr_e_end;    
-    boot_blk=malloc(boot_blk_sz);
+    boot_blk=(PBYTE)malloc(boot_blk_sz);
     memcpy(boot_blk, &flash[ldr_b_start], ldr_b_end+ldr_bb_end);
     memcpy(&boot_blk[ldr_b_end+ldr_bb_end], ldr_c, ldr_c_end);
     memcpy(&boot_blk[ldr_b_end+ldr_bb_end+ldr_c_end], ldr_d, ldr_d_end);
@@ -368,7 +386,7 @@ int main (int argc, char** argv)
 // usage
 {
     if(argc!=4){
-		printf("\nUsage: XDKbuild v0.05b [input image file] [1bl_key] [sc_file]\n");
+		printf("Usage: XDKbuild v0.05b [input image file] [1bl_key] [sc_file]\n");
         printf("By Xvistaman2005\n");
 		exit(0);
 	}
@@ -390,8 +408,8 @@ int main (int argc, char** argv)
 
 
     f_pgs=f_sz/528;
-    flash=malloc(f_sz);
-    ecc=malloc(f_sz);
+    flash=(PBYTE)malloc(f_sz);
+    ecc=(PBYTE)malloc(f_sz);
 	memset(ecc, 0x0, f_sz);
 
 	if(f_sz==50331648){
@@ -436,7 +454,7 @@ int main (int argc, char** argv)
 
 //get keys from command line and conver then to hex data
     sscanf(argv[2], "%s", bl_string);
-    hex2data(bl_key, bl_string, 0x20);
+    hex2data((PCHAR)bl_key, bl_string);
 	printf("Setting 1BL key as: %s\n", argv[2]);
 
 //get loction of all ldrs in flash
@@ -444,8 +462,8 @@ int main (int argc, char** argv)
 	printf("Locating Bootloaders\n");
 
 //setup buffers for decrypted ldrs
-    ldr_d=malloc(ldr_d_end);
-    ldr_e=malloc(ldr_e_end);
+    ldr_d=(PBYTE)malloc(ldr_d_end);
+    ldr_e=(PBYTE)malloc(ldr_e_end);
 
  // create all ldr keys to crpyt ldrs with   
     getLdrKeysRetail();
@@ -464,7 +482,7 @@ int main (int argc, char** argv)
     rewind(scf);
 
 //setup sc buffer
-    ldr_c=malloc(ldr_c_end);
+    ldr_c=(PBYTE)malloc(ldr_c_end);
     fread(ldr_c, ldr_c_end, 0x01, scf);
     fclose(scf);
 	printf("Reading SC Bootloader File: %s\n", argv[3]);

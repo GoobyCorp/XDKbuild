@@ -29,17 +29,17 @@
  */
 
 #if !defined(POLARSSL_CONFIG_FILE)
-#include "config.h"
+#include "config.hpp"
 #else
 #include POLARSSL_CONFIG_FILE
 #endif
 
 #if defined(POLARSSL_ARC4_C)
 
-#include "arc4.h"
+#include "arc4.hpp"
 
 #if defined(POLARSSL_PLATFORM_C)
-#include "platform.h"
+#include "platform.hpp"
 #else
 #define polarssl_printf printf
 #endif
@@ -48,7 +48,9 @@
 
 /* Implementation that should never be optimized out by the compiler */
 static void polarssl_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
+    unsigned char *p = (unsigned char*)v;
+    while( n-- )
+        *p++ = 0;
 }
 
 void arc4_init( arc4_context *ctx )

@@ -21,7 +21,7 @@ For shadow booting the core patch set for the kernel is required along with the 
 
 cOz -  Bootloader reverse engineering, and lots of the patch code derived for use in this project. You have always been there for me man, thanks XD!
 
-Visual Studio - Python and patch library release, some patches were ported from his lib
+Visual Studio - Python and patch library release, some patches were ported from his lib and mass refactor from C to C++
 
 Octal450 - J-Runner integration, creating compatible timing files, and flash testing, nice work man
 

@@ -2175,6 +2175,6 @@
 
 /* \} name SECTION: Module configuration options */
 
-#include "check_config.h"
+#include "check_config.hpp"
 
 #endif /* POLARSSL_CONFIG_H */
