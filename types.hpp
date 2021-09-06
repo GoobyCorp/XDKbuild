@@ -1,12 +1,5 @@
 #ifndef _TYPES_H
 #define _TYPES_H
-#define _ES16(val) \
-	((u16)(((((u16)val) & 0xff00) >> 8) | \
-	       ((((u16)val) & 0x00ff) << 8)))
-
-#define bswap16(x) (((x&0xFF)<<8)+(((x&0xFF00)>>8)))
-#define bswap32(x) ((((x&0xFF)<<24))+(((x&0xFF00)<<8))+(((x&0xFF0000)>>8))+(((x&0xFF000000)>>24)))
-#define bswap64(x) (_byteswap_uint64(x))
 
 // primitives
 typedef unsigned char		u8, UCHAR, BYTE;
@@ -24,7 +17,6 @@ typedef BYTE*  PBYTE, PUCHAR;
 typedef WORD*  PWORD;
 typedef DWORD* PDWORD;
 typedef QWORD* PQWORD;
-
 
 #ifndef TRUE
 #define TRUE 1
