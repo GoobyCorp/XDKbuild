@@ -25,6 +25,10 @@ typedef long long		   s64;
 #define MAXPATHLEN 1024
 #endif
 
+#define PAGE_SIZE 528
+#define PAGE_DATA_SIZE 512
+#define PAGE_ECC_SIZE 16
+
 #define FLASH_16_MB      17301504
 #define FLASH_256_512_MB 69206016
 #define FLASH_4_GB       50331648
@@ -60,16 +64,21 @@ struct BL_HDR {
 };
 
 struct BL_HDR_WITH_NONCE {
-	BL_HDR Header;
+	WORD Magic;
+	WORD Build;
+	WORD QFE;
+	WORD Flags;
+	DWORD EntryPoint;
+	DWORD Size;
 	BYTE Nonce[0x10];
 };
 
-#define HV_HDR     BL_HDR_WITH_NONCE
-#define SD_2BL_HDR BL_HDR_WITH_NONCE
-#define SC_3BL_HDR BL_HDR_WITH_NONCE
-#define SD_4BL_HDR BL_HDR_WITH_NONCE
-#define SE_5BL_HDR BL_HDR_WITH_NONCE
-#define SF_6BL_HDR BL_HDR_WITH_NONCE
+#define HV_HDR         BL_HDR_WITH_NONCE
+#define CBA_SB_2BL_HDR BL_HDR_WITH_NONCE
+#define CBB_SC_3BL_HDR BL_HDR_WITH_NONCE
+#define CD_SD_4BL_HDR  BL_HDR_WITH_NONCE
+#define CE_SE_5BL_HDR  BL_HDR_WITH_NONCE
+#define CF_SF_6BL_HDR  BL_HDR_WITH_NONCE
 
 // bootloader magic
 enum BL_MAGIC {

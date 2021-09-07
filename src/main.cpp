@@ -39,93 +39,6 @@ int ldr_ce_se_5bl_size;
 int boot_blk_sz;
 SFC_TYPE sfc;
 
-int char2int(char input)
-{
-	if(input >= '0' && input <= '9')
-		return input - '0';
-	if(input >= 'A' && input <= 'F')
-		return input - 'A' + 10;
-	if(input >= 'a' && input <= 'f')
-		return input - 'a' + 10;
-	// throw std::invalid_argument("Invalid input string");
-}
-
-int HexDecode(PCHAR pcHex, PBYTE pbOut)
-{
-	if(strlen(pcHex) % 2 != 0)
-		return 0;
-
-	while(*pbOut && pcHex[1])
-	{
-		*(pbOut++) = char2int(*pcHex) * 16 + char2int(pcHex[1]);
-		pcHex += 2;
-	}
-	return 0;
-}
-
-DWORD GetFileSize(FILE* fptr)
-{
-	int len;
-	if(fptr == NULL)
-	{
-		return 0;
-	}
-	fseek(fptr, 0 , SEEK_END);
-	len = ftell(fptr);
-	rewind(fptr);
-	return len;
-}
-
-VOID DumpBufferHex(PCHAR filename, PVOID buffer, int size)
-{
-	FILE* fptr;
-	printf("writing 0x%x bytes to %s...", size, filename);
-	if((buffer != NULL) && (filename != NULL) && (size != 0))
-	{
-		fptr = fopen(filename, "wb");
-		if(fptr != NULL)
-		{
-			fwrite(buffer, size, 1, fptr);
-			fclose(fptr);
-		}
-		else
-		{
-			printf("ERROR! Could not open file for writing!\n");
-			return;
-		}
-	}
-	else
-	{
-		printf("ERROR! Invalid args supplied to dump function!\n");
-		return;
-	}
-	printf("done!\n");
-}
-
-PBYTE ReadFile(PCHAR fname, PDWORD pdwSize)
-{
-	FILE* fin;
-	PBYTE buf = NULL;
-	fin = fopen(fname, "rb");
-	if(fin != NULL)
-	{
-		int sz = GetFileSize(fin);
-		printf("loading file %s 0x%x bytes...", fname, sz);
-		buf = (PBYTE)malloc(sz);
-		if(buf != NULL)
-		{
-			fread(buf, sz, 1, fin);
-			if(pdwSize != NULL)
-				*pdwSize = sz;
-			printf("done!\n");
-		}
-		else
-			printf("failed to allocate 0x%x bytes!\n", sz);
-		fclose(fin);
-	}
-	return buf;
-}
-
 DWORD GetPageEcc(PBYTE datc, PBYTE spare)
 {
 	DWORD i = 0, val = 0, v = 0;
@@ -178,7 +91,7 @@ VOID FixFuses()
 			ctr += sizeof(QWORD);
 		}
 			
-		printf("Virtual Fuses Found At 0x%X\n:", ctr - sizeof(QWORD));
+		printf("Virtual Fuses Found At 0x%llX\n:", ctr - sizeof(QWORD));
 		ctr -= sizeof(QWORD);
 		*(PDWORD)(flash + 0x70) = bswap32(ctr - patch_slot_start);
 	}
@@ -230,14 +143,14 @@ VOID DecryptLdrs()
 	Crypto::XeCryptRc4(ldr_ce_se_5bl_key, 0x10, &flash[ldr_ce_se_5bl_offs + 0x20], ldr_ce_se_5bl_size-0x20, &flash[ldr_ce_se_5bl_offs + 0x20]);
 }
 
-VOID GetLdrKeysRetail()
+/* VOID GetLdrKeysRetail()
 {
 	memset(zero_key, 0, 0x10);
 	Crypto::XeCryptHmacSha(bl_key, 0x10, &flash[ldr_cba_sb_2bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_cba_sb_2bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cba_sb_2bl_key, 0x10, &flash[ldr_cbb_sc_3bl_offs + 0x10], 0x10, zero_key, 0x10, NULL, 0, ldr_cbb_sc_3bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cbb_sc_3bl_key, 0x10, &flash[ldr_cd_sd_4bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_cd_sd_4bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cd_sd_4bl_key, 0x10, &flash[ldr_ce_se_5bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_ce_se_5bl_key, 0x10);
-}
+} */
 
 VOID GetLdrKeysDevkit()
 {
@@ -259,62 +172,80 @@ VOID BuildBootBlk()
 	boot_blk_sz = ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size + ldr_cd_sd_4bl_size + ldr_ce_se_5bl_size;
 	boot_blk = (PBYTE)malloc(boot_blk_sz);
 	memcpy(boot_blk, &flash[ldr_cba_sb_2bl_offs], ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size);
-	memcpy(&boot_blk[ldr_b_end + ldr_bb_end], ldr_c, ldr_c_end);
-	memcpy(&boot_blk[ldr_b_end + ldr_bb_end + ldr_c_end], ldr_d, ldr_d_end);
-	memcpy(&boot_blk[ldr_b_end + ldr_bb_end + ldr_c_end + ldr_d_end], ldr_e, ldr_e_end);
-	memcpy(&flash[ldr_b_start], boot_blk, boot_blk_sz);
+	memcpy(&boot_blk[ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size], ldr_c, ldr_cbb_sc_3bl_size);
+	memcpy(&boot_blk[ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size + ldr_cbb_sc_3bl_size], ldr_d, ldr_cd_sd_4bl_size);
+	memcpy(&boot_blk[ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size + ldr_cbb_sc_3bl_size + ldr_cd_sd_4bl_size], ldr_e, ldr_ce_se_5bl_size);
+	memcpy(&flash[ldr_cba_sb_2bl_offs], boot_blk, boot_blk_sz);
+}
+
+BL_HDR ParseBootloaderHeader(PVOID addr) {
+	PBYTE pbData = (PBYTE)addr;
+	BL_HDR hdr;
+	hdr.Magic = bswap16(*(PWORD)pbData);
+	pbData += sizeof(WORD);
+	hdr.Build = bswap16(*(PWORD)pbData);
+	pbData += sizeof(WORD);
+	hdr.QFE = bswap16(*(PWORD)pbData);
+	pbData += sizeof(WORD);
+	hdr.Flags = bswap16(*(PWORD)pbData);
+	pbData += sizeof(WORD);
+	hdr.EntryPoint = bswap32(*(PDWORD)pbData);
+	pbData += sizeof(DWORD);
+	hdr.Size = bswap32(*(PDWORD)pbData);
+	pbData += sizeof(DWORD);
+	return hdr;
 }
 
 VOID ParseFlashHeader() {
 	// I KNOW THIS IS AWFUL
-	PBYTE pFlash = flash;
-	FlashHdr.Magic = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.Build = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.QFE = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.Flags = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.CbOffset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.Sf1Offset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	memcpy(&FlashHdr.Copyright, pFlash, 0x40);
-	pFlash += 0x40;
-	memcpy(&FlashHdr.Padding, pFlash, 0x10);
-	FlashHdr.KvLength = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.PatchSlots = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.KvVersion = bswap16(*(PWORD)pFlash);
-	pFlash += sizeof(WORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.KvOffset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.PatchSlotSize = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.SmcConfigOffset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.SmcLength = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
-	FlashHdr.SmcOffset = bswap32(*(PDWORD)pFlash);
-	pFlash += sizeof(DWORD);
+	PBYTE pbFlash = flash;
+	FlashHdr.Magic = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.Build = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.QFE = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.Flags = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.CbOffset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.Sf1Offset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	memcpy(FlashHdr.Copyright, pbFlash, 0x40);
+	pbFlash += 0x40;
+	memcpy(FlashHdr.Padding, pbFlash, 0x10);
+	FlashHdr.KvLength = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.PatchSlots = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.KvVersion = bswap16(*(PWORD)pbFlash);
+	pbFlash += sizeof(WORD);
+	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.KvOffset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.PatchSlotSize = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.SmcConfigOffset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.SmcLength = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
+	FlashHdr.SmcOffset = bswap32(*(PDWORD)pbFlash);
+	pbFlash += sizeof(DWORD);
 }
 
 int main(int argc, char* argv[])
 {
 	// usage
 	if(argc != 4){
-		printf("Usage: XDKbuild v0.05b [input image file] [1bl_key] [sc_file]\n");
+		printf("Usage: XDKbuild v0.06b [input image file] [1bl_key] [sc_file]\n");
 		printf("By Xvistaman2005\n");
 		return ERR_NOT_ENOUGH_ARGS;
 	}
 	// flash file vars
-	printf("XDKbuild v0.05b By Xvistaman2005\n");
+	printf("XDKbuild v0.06b By Xvistaman2005\n");
 	
 	//open the flash file and unecc image
 	FILE* f = fopen(argv[1], "rb");
@@ -324,7 +255,7 @@ int main(int argc, char* argv[])
 		return ERR_CANT_OPEN_INPUT_FILE;
 	}
 
-	f_sz = GetFileSize(f);
+	f_sz = utils::GetFileSize(f);
 
 	f_pgs = f_sz / 528;
 	flash = (PBYTE)malloc(f_pgs * 512);
@@ -347,8 +278,7 @@ int main(int argc, char* argv[])
 		return ERR_INVALID_IMAGE_SIZE;
 	}
 
-	// parse the flash header
-	ParseFlashHeader();
+	FlashImage fi(f);
 	
 	fclose(f);
 	printf("Reading Image File %s\n", argv[1]);
@@ -373,7 +303,7 @@ int main(int argc, char* argv[])
 
 	//get keys from command line and conver then to hex data
 	sscanf(argv[2], "%s", bl_string);
-	HexDecode((PCHAR)bl_key, bl_string);
+	utils::HexDecode((PCHAR)bl_key, bl_string);
 	printf("Setting 1BL key as: %s\n", argv[2]);
 
 	//get loction of all ldrs in flash
@@ -381,12 +311,12 @@ int main(int argc, char* argv[])
 	printf("Locating Bootloaders\n");
 
 	//setup buffers for decrypted ldrs
-	ldr_d = (PBYTE)malloc(ldr_d_end);
-	ldr_e = (PBYTE)malloc(ldr_e_end);
+	ldr_d = (PBYTE)malloc(ldr_cd_sd_4bl_size);
+	ldr_e = (PBYTE)malloc(ldr_ce_se_5bl_size);
 
 	// create all ldr keys to crpyt ldrs with   
-	GetLdrKeysRetail();
-	printf("Calculating Retail Decryption Keys\n");
+	// GetLdrKeysRetail();
+	// printf("Calculating Retail Decryption Keys\n");
 	
 	//read in the sc file from the file name on the cmd line
 	FILE* scf = fopen(argv[3], "rb");
@@ -396,11 +326,11 @@ int main(int argc, char* argv[])
 		return ERR_CANT_OPEN_SC_FILE;
 	}
 
-	ldr_c_end = GetFileSize(scf);
+	ldr_cbb_sc_3bl_size = utils::GetFileSize(scf);
 
 	//setup sc buffer
-	ldr_c = (PBYTE)malloc(ldr_c_end);
-	fread(ldr_c, ldr_c_end, 0x01, scf);
+	ldr_c = (PBYTE)malloc(ldr_cbb_sc_3bl_size);
+	fread(ldr_c, ldr_cbb_sc_3bl_size, 0x01, scf);
 	fclose(scf);
 	printf("Reading SC Bootloader File: %s\n", argv[3]);
 
@@ -409,10 +339,10 @@ int main(int argc, char* argv[])
 	printf("Decrypting Bootloaders\n");
 
 	//copy the decrpyted SD SE to there own buffers for crypto
-	memcpy(ldr_d, &flash[ldr_d_start], ldr_d_end);
-	memcpy(ldr_e, &flash[ldr_e_start], ldr_e_end);
+	memcpy(ldr_d, &flash[ldr_cd_sd_4bl_offs], ldr_cd_sd_4bl_size);
+	memcpy(ldr_e, &flash[ldr_ce_se_5bl_offs], ldr_ce_se_5bl_size);
 
-	//setup devkit crypto keys for SC SD SE ldrs
+	//setup devkit crypto keys for SB SC SD SE ldrs
 	GetLdrKeysDevkit();
 	printf("Calculating Devkit Encryption Keys\n");
 
@@ -539,9 +469,9 @@ int main(int argc, char* argv[])
 	free(flash);
 	free(ecc);
 	free(boot_blk);
+	free(ldr_c);
 	free(ldr_d);
 	free(ldr_e);
-	free(ldr_c);
 		
 	return ERR_NONE;
 }
