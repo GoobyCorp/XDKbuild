@@ -1,4 +1,4 @@
-TARGET    = xcp
+TARGET    = xdkbuild
 SRCDIR    = src
 CXX       = g++
 CXXFLAGS  = -Isrc/include -O3 -std=c++2a
