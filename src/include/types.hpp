@@ -12,14 +12,7 @@ typedef short			   s16;
 typedef int			       s32;
 typedef long long		   s64;
 
-// pointers
-typedef void*  PVOID, VOIDP;
-typedef CHAR*  PCHAR;
-typedef BYTE*  PBYTE, PUCHAR;
-typedef WORD*  PWORD;
-typedef DWORD* PDWORD;
-typedef QWORD* PQWORD;
-
+// constants
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -32,25 +25,29 @@ typedef QWORD* PQWORD;
 #define MAXPATHLEN 1024
 #endif
 
+#define FLASH_16_MB      17301504
+#define FLASH_256_512_MB 69206016
+#define FLASH_4_GB       50331648
+
 // structs
 struct FLASH_HDR {
-	WORD Magic;
-	WORD Build;
-	WORD QFE;
-	WORD Flags;
-	DWORD CBOffset;
-	DWORD SF1Offset;
+	WORD  Magic;
+	WORD  Build;
+	WORD  QFE;
+	WORD  Flags;
+	DWORD CbOffset;
+	DWORD Sf1Offset;
 	BYTE  Copyright[0x40];
 	BYTE  Padding[0x10];
-	DWORD KVLength;
-	DWORD SF2Offset;
-	WORD PatchSlots;
-	WORD KVVersion;
-	DWORD KVOffset;
+	DWORD KvLength;
+	DWORD Sf2Offset;
+	WORD  PatchSlots;
+	WORD  KvVersion;
+	DWORD KvOffset;
 	DWORD PatchSlotSize;
-	DWORD SMCConfigOffset;
-	DWORD SMCLength;
-	DWORD SMCOffset;
+	DWORD SmcConfigOffset;
+	DWORD SmcLength;
+	DWORD SmcOffset;
 };
 
 struct BL_HDR {
@@ -77,8 +74,8 @@ struct BL_HDR_WITH_NONCE {
 // bootloader magic
 enum BL_MAGIC {
 	CA_1BL = 0x0342,
-	CB_2BL = 0x4342,
-	CC_3BL = 0x4343,
+	CB_CBA_2BL = 0x4342,
+	CC_CBB_3BL = 0x4343,
 	CD_4BL = 0x4344,
 	CE_5BL = 0x4345,
 	CF_6BL = 0x4346,
@@ -108,5 +105,14 @@ enum SFC_TYPE {
 	SFC_BIG_ON_BIG,
 	SFC_EMMC
 };
+
+// pointers
+typedef FLASH_HDR* PFLASH_HDR;
+typedef void*  PVOID, VOIDP;
+typedef CHAR*  PCHAR;
+typedef BYTE*  PBYTE, PUCHAR;
+typedef WORD*  PWORD;
+typedef DWORD* PDWORD;
+typedef QWORD* PQWORD;
 
 #endif // _TYPES_H
