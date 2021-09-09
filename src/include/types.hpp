@@ -1,6 +1,12 @@
 #ifndef _TYPES_HPP
 #define _TYPES_HPP
 
+// defines
+// es = endian swap
+#define es16(x) x = bswap16(x)
+#define es32(x) x = bswap32(x)
+#define es64(x) x = bswap64(x)
+
 // primitives
 typedef void               VOID;
 typedef unsigned char	   u8, UCHAR, BYTE;
@@ -25,6 +31,8 @@ typedef long long		   s64;
 #define MAXPATHLEN 1024
 #endif
 
+#define SHA_DIGEST_SIZE 0x14  // 20
+
 #define PAGE_SIZE 528
 #define PAGE_DATA_SIZE 512
 #define PAGE_ECC_SIZE 16
@@ -32,6 +40,8 @@ typedef long long		   s64;
 #define FLASH_16_MB      17301504
 #define FLASH_256_512_MB 69206016
 #define FLASH_4_GB       50331648
+
+
 
 // structs
 struct FLASH_HDR {
@@ -117,6 +127,8 @@ enum SFC_TYPE {
 
 // pointers
 typedef FLASH_HDR* PFLASH_HDR;
+typedef BL_HDR* PBL_HDR;
+typedef BL_HDR_WITH_NONCE* PBL_HDR_WITH_NONCE;
 typedef void*  PVOID, VOIDP;
 typedef CHAR*  PCHAR;
 typedef BYTE*  PBYTE, PUCHAR;

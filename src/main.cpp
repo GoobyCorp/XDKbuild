@@ -1,6 +1,6 @@
 #include "stdafx.hpp"
 
-FLASH_HDR FlashHdr;
+/* FLASH_HDR FlashHdr;
 PBYTE flash;
 PBYTE ecc;
 PBYTE boot_blk;
@@ -8,7 +8,6 @@ PBYTE ldr_d;
 PBYTE ldr_e;
 PBYTE ldr_c;
 BYTE bl_key[0x10];
-BYTE bl_string[0x20];
 BYTE zero_key[0x10];
 
 BYTE ldr_cba_sb_2bl_key[0x10];
@@ -143,14 +142,14 @@ VOID DecryptLdrs()
 	Crypto::XeCryptRc4(ldr_ce_se_5bl_key, 0x10, &flash[ldr_ce_se_5bl_offs + 0x20], ldr_ce_se_5bl_size-0x20, &flash[ldr_ce_se_5bl_offs + 0x20]);
 }
 
-/* VOID GetLdrKeysRetail()
+VOID GetLdrKeysRetail()
 {
 	memset(zero_key, 0, 0x10);
 	Crypto::XeCryptHmacSha(bl_key, 0x10, &flash[ldr_cba_sb_2bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_cba_sb_2bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cba_sb_2bl_key, 0x10, &flash[ldr_cbb_sc_3bl_offs + 0x10], 0x10, zero_key, 0x10, NULL, 0, ldr_cbb_sc_3bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cbb_sc_3bl_key, 0x10, &flash[ldr_cd_sd_4bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_cd_sd_4bl_key, 0x10);
 	Crypto::XeCryptHmacSha(ldr_cd_sd_4bl_key, 0x10, &flash[ldr_ce_se_5bl_offs + 0x10], 0x10, NULL, 0, NULL, 0, ldr_ce_se_5bl_key, 0x10);
-} */
+}
 
 VOID GetLdrKeysDevkit()
 {
@@ -177,64 +176,7 @@ VOID BuildBootBlk()
 	memcpy(&boot_blk[ldr_cba_sb_2bl_size + ldr_cbb_sc_3bl_size + ldr_cbb_sc_3bl_size + ldr_cd_sd_4bl_size], ldr_e, ldr_ce_se_5bl_size);
 	memcpy(&flash[ldr_cba_sb_2bl_offs], boot_blk, boot_blk_sz);
 }
-
-BL_HDR ParseBootloaderHeader(PVOID addr) {
-	PBYTE pbData = (PBYTE)addr;
-	BL_HDR hdr;
-	hdr.Magic = bswap16(*(PWORD)pbData);
-	pbData += sizeof(WORD);
-	hdr.Build = bswap16(*(PWORD)pbData);
-	pbData += sizeof(WORD);
-	hdr.QFE = bswap16(*(PWORD)pbData);
-	pbData += sizeof(WORD);
-	hdr.Flags = bswap16(*(PWORD)pbData);
-	pbData += sizeof(WORD);
-	hdr.EntryPoint = bswap32(*(PDWORD)pbData);
-	pbData += sizeof(DWORD);
-	hdr.Size = bswap32(*(PDWORD)pbData);
-	pbData += sizeof(DWORD);
-	return hdr;
-}
-
-VOID ParseFlashHeader() {
-	// I KNOW THIS IS AWFUL
-	PBYTE pbFlash = flash;
-	FlashHdr.Magic = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Build = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.QFE = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Flags = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.CbOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.Sf1Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	memcpy(FlashHdr.Copyright, pbFlash, 0x40);
-	pbFlash += 0x40;
-	memcpy(FlashHdr.Padding, pbFlash, 0x10);
-	FlashHdr.KvLength = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.PatchSlots = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.KvVersion = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.KvOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.PatchSlotSize = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcConfigOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcLength = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-}
+*/
 
 int main(int argc, char* argv[])
 {
@@ -244,8 +186,12 @@ int main(int argc, char* argv[])
 		printf("By Xvistaman2005\n");
 		return ERR_NOT_ENOUGH_ARGS;
 	}
+
 	// flash file vars
 	printf("XDKbuild v0.06b By Xvistaman2005\n");
+
+	// parse 1BL key argument
+	utils::HexDecode(argv[2], globals::_1BL_KEY);
 	
 	//open the flash file and unecc image
 	FILE* f = fopen(argv[1], "rb");
@@ -255,6 +201,11 @@ int main(int argc, char* argv[])
 		return ERR_CANT_OPEN_INPUT_FILE;
 	}
 
+	FlashImage fi(f);
+
+	fclose(f);
+
+	/*
 	f_sz = utils::GetFileSize(f);
 
 	f_pgs = f_sz / 528;
@@ -277,10 +228,9 @@ int main(int argc, char* argv[])
 		printf("Valid Sizes Are 17301504 = 16mb nand, 69206016==Big Block Image 256mb/512mb, 50331648 = Corona 4Gb eMMC\n");
 		return ERR_INVALID_IMAGE_SIZE;
 	}
-
-	FlashImage fi(f);
 	
 	fclose(f);
+
 	printf("Reading Image File %s\n", argv[1]);
 	
 	// test ecc bytes for v1 or v2	
@@ -472,6 +422,10 @@ int main(int argc, char* argv[])
 	free(ldr_c);
 	free(ldr_d);
 	free(ldr_e);
+	*/
+
+	// free(flash);
+	// free(ecc);
 		
 	return ERR_NONE;
 }

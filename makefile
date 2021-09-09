@@ -1,8 +1,8 @@
 TARGET    = xdkbuild
 SRCDIR    = src
 CXX       = g++
-CXXFLAGS  = -Isrc/include -O3 -std=c++2a
-LDFLAGS   = 
+CXXFLAGS  = -Isrc/include/ -Icryptopp/ -g3 -O3 -DNDEBUG -Wall -Wextra -std=c++2a
+LDFLAGS   = -l:libcryptopp.a
 SRCS      = $(foreach dir,$(SRCDIR), $(wildcard $(dir)/*.cpp))
 OBJS      = $(SRCS:.cpp=.o)
 

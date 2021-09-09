@@ -2,110 +2,134 @@
 
 // flash images
 FlashImage::FlashImage(PBYTE data, DWORD size) {
-    this->TotalSize = size;
+	this->TotalSize = size;
 
-    this->PageCount = this->TotalSize / PAGE_SIZE;
-    this->FlashData = (PBYTE)malloc(this->PageCount * PAGE_DATA_SIZE);
-    this->EccData = (PBYTE)malloc(this->PageCount * PAGE_ECC_SIZE);
+	this->PageCount = this->TotalSize / PAGE_SIZE;
+	this->pbFlashData = (PBYTE)malloc(this->PageCount * PAGE_DATA_SIZE);
+	this->pbEccData = (PBYTE)malloc(this->PageCount * PAGE_ECC_SIZE);
 
-    for(int read = 0; read < this->TotalSize; read += PAGE_SIZE) {
-        memcpy(FlashData + this->FlashSize, data + read, PAGE_DATA_SIZE);
-        memcpy(EccData + this->EccSize, data + (read + PAGE_DATA_SIZE), PAGE_ECC_SIZE);
-        this->FlashSize += PAGE_DATA_SIZE;
-        this->EccSize += PAGE_ECC_SIZE;
-    }
+	for(DWORD read = 0; read < this->TotalSize; read += PAGE_SIZE) {
+		memcpy(this->pbFlashData + this->FlashSize, data + read, PAGE_DATA_SIZE);
+		memcpy(this->pbEccData + this->EccSize, data + (read + PAGE_DATA_SIZE), PAGE_ECC_SIZE);
+		this->FlashSize += PAGE_DATA_SIZE;
+		this->EccSize += PAGE_ECC_SIZE;
+	}
 
-    ParseFlashHeader();
-    BL_HDR_WITH_NONCE cb_sb_2bl_hdr = ParseBootloaderHeader(this->FlashHdr.CbOffset);
+	//ParseFlashHeader();
+	//ParseBootloaderHeader(this->FlashHdr.CbOffset);
+
+	// @todo keep up-to-date with the FILE* constructor
 }
 
 FlashImage::FlashImage(FILE* f) {
-    this->TotalSize = utils::GetFileSize(f);
-    fseek(f, 0, SEEK_SET);
+	this->TotalSize = utils::GetFileSize(f);
+	fseek(f, 0, SEEK_SET);
 
-    this->PageCount = this->TotalSize / PAGE_SIZE;
-    this->FlashData = (PBYTE)malloc(this->PageCount * PAGE_DATA_SIZE);
-    this->EccData = (PBYTE)malloc(this->PageCount * PAGE_ECC_SIZE);
+	this->PageCount = this->TotalSize / PAGE_SIZE;
+	this->pbFlashData = (PBYTE)malloc(this->PageCount * PAGE_DATA_SIZE);
+	this->pbEccData = (PBYTE)malloc(this->PageCount * PAGE_ECC_SIZE);
 
-    for(int read = 0; read < this->TotalSize; read += PAGE_SIZE) {
-        fread(FlashData + this->FlashSize, PAGE_DATA_SIZE, 1, f);
-        fread(EccData + this->EccSize, PAGE_ECC_SIZE, 1, f);
-        this->FlashSize += PAGE_DATA_SIZE;
-        this->EccSize += PAGE_ECC_SIZE;
-    }
+	for(DWORD read = 0; read < this->TotalSize; read += PAGE_SIZE) {
+		fread(this->pbFlashData + this->FlashSize, PAGE_DATA_SIZE, 1, f);
+		fread(this->pbEccData + this->EccSize, PAGE_ECC_SIZE, 1, f);
+		this->FlashSize += PAGE_DATA_SIZE;
+		this->EccSize += PAGE_ECC_SIZE;
+	}
 
-    ParseFlashHeader();
-    this->CbaSb2blHdr = ParseBootloaderHeader(this->FlashHdr.CbOffset);
-    printf("0x%04X\n", this->CbaSb2blHdr.Magic);
-    this->CbbSc3blHdr = ParseBootloaderHeader(this->FlashHdr.CbOffset + this->CbaSb2blHdr.Size);
-    printf("0x%04X\n", this->CbbSc3blHdr.Magic);
-    this->CdSd4blHdr = ParseBootloaderHeader(this->FlashHdr.CbOffset + this->CbaSb2blHdr.Size + this->CbbSc3blHdr.Size);
-    printf("0x%04X\n", this->CdSd4blHdr.Magic);
-    this->CeSe5blHdr = ParseBootloaderHeader(this->FlashHdr.CbOffset + this->CbaSb2blHdr.Size + this->CbbSc3blHdr.Size + this->CdSd4blHdr.Size);
-    printf("0x%04X\n", this->CeSe5blHdr.Magic);
+	// flash header parsing
+	this->pFlashHdr = ParseFlashHeader();
+
+	// 2BL parsing
+	DWORD offset = this->pFlashHdr->CbOffset;
+	this->pCbaSb2blHdr = ParseBootloaderHeader(offset);
+	this->pbCbaSb2blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	//memcpy(this->pbCbaSb2blData, this->pbFlashData + offset, this->pCbaSb2blHdr->Size);
+	if(this->pCbaSb2blHdr->Magic == SB_2BL) {  // devkit-specific
+		// Crypto::XeCryptHmacSha(globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
+	} else if(this->pCbaSb2blHdr->Magic == CB_CBA_2BL) {  // retail-specific
+
+	}
+	// Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData);
+
+	// 3BL parsing
+	offset += this->pCbaSb2blHdr->Size;
+	this->pCbbSc3blHdr = ParseBootloaderHeader(offset);
+	this->pbCbbSc3blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	//memcpy(this->pbCbbSc3blData, this->pbFlashData + offset, this->pCbbSc3blHdr->Size);
+	if(this->pCbbSc3blHdr->Magic == SC_3BL) {  // devkit-specific
+		// Crypto::XeCryptHmacSha((PBYTE)globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
+	} else if(this->pCbbSc3blHdr->Magic == CC_CBB_3BL) {  // retail-specific
+		// Crypto::XeCryptHmacSha(this->CbaSb2blKey, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
+	}
+	// Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData);
+
+	// 4BL parsing
+	offset += this->pCbbSc3blHdr->Size;
+	this->pCdSd4blHdr = ParseBootloaderHeader(offset);
+	this->pbCdSd4blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	//memcpy(this->pbCdSd4blData, this->pbFlashData + offset, this->pCdSd4blHdr->Size);
+	if(this->pCdSd4blHdr->Magic == SD_4BL) {  // devkit-specific
+		// Crypto::XeCryptHmacSha(this->CbbSc3blKey, 0x10, this->pCdSd4blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CdSd4blKey, 0x10);
+	} else if(this->pCdSd4blHdr->Magic == CD_4BL) {  // retail-specific
+
+	}
+	// Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData);
+	
+	// 5BL parsing
+	offset += this->pCdSd4blHdr->Size;
+	this->pCeSe5blHdr = ParseBootloaderHeader(offset);
+	this->pbCeSe5blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	if(this->pCeSe5blHdr->Magic == SE_5BL) {  // devkit-specific
+		// Crypto::XeCryptHmacSha(this->CdSd4blKey, 0x10, this->pCeSe5blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CeSe5blKey, 0x10);
+	} else if(this->pCeSe5blHdr->Magic == CE_5BL) {  // retail-specific
+		
+	}
+	// Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData);
+
+
+	utils::PrintHex(this->CbaSb2blKey, 0x10);
+	utils::PrintHex(this->CbbSc3blKey, 0x10);
+	utils::PrintHex(this->CdSd4blKey, 0x10);
+	utils::PrintHex(this->CeSe5blKey, 0x10);
 }
 
 FlashImage::~FlashImage() {
-    free(this->FlashData);
-    free(this->EccData);
+	free(this->pbFlashData);
+	free(this->pbEccData);
 }
 
-VOID FlashImage::ParseFlashHeader() {
-	// I KNOW THIS IS AWFUL
-	PBYTE pbFlash = this->FlashData;
-	this->FlashHdr.Magic = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Build = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.QFE = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Flags = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.CbOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.Sf1Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	memcpy(&FlashHdr.Copyright, pbFlash, 0x40);
-	pbFlash += 0x40;
-	memcpy(&FlashHdr.Padding, pbFlash, 0x10);
-	FlashHdr.KvLength = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.PatchSlots = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.KvVersion = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	FlashHdr.Sf2Offset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.KvOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.PatchSlotSize = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcConfigOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcLength = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	FlashHdr.SmcOffset = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
+PFLASH_HDR FlashImage::ParseFlashHeader() {
+	PFLASH_HDR fhdr = (PFLASH_HDR)this->pbFlashData;
+
+	es16(fhdr->Magic);
+	es16(fhdr->Build);
+	es16(fhdr->QFE);
+	es16(fhdr->Flags);
+	es32(fhdr->CbOffset);
+	es32(fhdr->Sf1Offset);
+	es32(fhdr->KvLength);
+	es32(fhdr->Sf2Offset);
+	es16(fhdr->PatchSlots);
+	es16(fhdr->KvVersion);
+	es32(fhdr->Sf2Offset);
+	es32(fhdr->KvOffset);
+	es32(fhdr->PatchSlotSize);
+	es32(fhdr->SmcConfigOffset);
+	es32(fhdr->SmcLength);
+	es32(fhdr->SmcOffset);
+
+	return fhdr;
 }
 
-BL_HDR_WITH_NONCE FlashImage::ParseBootloaderHeader(DWORD offset) {
-	PBYTE pbFlash = this->FlashData + offset;
-	BL_HDR_WITH_NONCE hdr;
-	hdr.Magic = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	hdr.Build = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	hdr.QFE = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	hdr.Flags = bswap16(*(PWORD)pbFlash);
-	pbFlash += sizeof(WORD);
-	hdr.EntryPoint = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-	hdr.Size = bswap32(*(PDWORD)pbFlash);
-	pbFlash += sizeof(DWORD);
-    memcpy(hdr.Nonce, pbFlash, 0x10);
-    pbFlash += 0x10;
-	return hdr;
+PBL_HDR_WITH_NONCE FlashImage::ParseBootloaderHeader(DWORD offset) {
+	PBL_HDR_WITH_NONCE bhdr = (PBL_HDR_WITH_NONCE)(this->pbFlashData + offset);
+
+	es16(bhdr->Magic);
+	es16(bhdr->Build);
+	es16(bhdr->QFE);
+	es16(bhdr->Flags);
+	es32(bhdr->EntryPoint);
+	es32(bhdr->Size);
+	
+	return bhdr;
 }

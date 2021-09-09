@@ -10,6 +10,13 @@ int utils::char2int(char input) {
 	throw invalid_argument("Invalid input character specified!");
 }
 
+VOID utils::PrintHex(PBYTE data, DWORD size) {
+	for(DWORD i = 0; i < size; i++) {
+		printf("%02X", data[i]);
+	}
+	printf("\n");
+}
+
 int utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
 	if(strlen(pcHex) % 2 != 0)
 		return 0;
@@ -22,15 +29,15 @@ int utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
 	return 0;
 }
 
-DWORD utils::GetFileSize(FILE* fptr) {
+DWORD utils::GetFileSize(FILE* f) {
 	int len;
-	if(fptr == NULL)
+	if(f == NULL)
 	{
 		return 0;
 	}
-	fseek(fptr, 0 , SEEK_END);
-	len = ftell(fptr);
-	rewind(fptr);
+	fseek(f, 0 , SEEK_END);
+	len = ftell(f);
+	rewind(f);
 	return len;
 }
 

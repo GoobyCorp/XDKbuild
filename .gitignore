@@ -4,3 +4,4 @@
 /xdkbuild
 
 /src/*.o
+/cryptopp

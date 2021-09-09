@@ -1,5 +1,6 @@
 class utils {
     public:
+        static VOID PrintHex(PBYTE data, DWORD size);
         static int HexDecode(PCHAR pcHex, PBYTE pbOut);
         static DWORD GetFileSize(FILE* fptr);
         static VOID DumpBufferHex(PCHAR filename, PVOID buffer, int size);
