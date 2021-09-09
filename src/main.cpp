@@ -38,36 +38,6 @@ int ldr_ce_se_5bl_size;
 int boot_blk_sz;
 SFC_TYPE sfc;
 
-DWORD GetPageEcc(PBYTE datc, PBYTE spare)
-{
-	DWORD i = 0, val = 0, v = 0;
-	PDWORD data = (PDWORD)datc;
-	for (i = 0; i < 0x1066; i++)
-	{
-		if (!(i & 31))
-		{
-			if (i == 0x1000)
-				data = (PDWORD)spare;
-			v = ~*data++; // byte order: LE
-		}
-		val ^= v & 1;
-		v >>= 1;
-		if (val & 1)
-			val ^= 0x6954559;
-		val >>= 1;
-	}
-	return ~val;
-}
-
-VOID FixPageEcc(PBYTE datc, PBYTE spare)
-{
-	DWORD val = GetPageEcc(datc, spare);
-	spare[12] = (spare[12] & 0x3F) + ((val << 6) & 0xC0);
-	spare[13] = (val >> 2) & 0xFF;
-	spare[14] = (val >> 10) & 0xFF;
-	spare[15] = (val >> 18) & 0xFF;
-}
-
 VOID FixFuses()
 {
 	int patch_slot_start;
@@ -181,7 +151,7 @@ VOID BuildBootBlk()
 int main(int argc, char* argv[])
 {
 	// usage
-	if(argc != 4){
+	if(argc != 4) {
 		printf("Usage: XDKbuild v0.06b [input image file] [1bl_key] [sc_file]\n");
 		printf("By Xvistaman2005\n");
 		return ERR_NOT_ENOUGH_ARGS;

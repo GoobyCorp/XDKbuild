@@ -9,10 +9,12 @@ class FlashImage {
         PBYTE pbEccData;
 
         // variables
+        SFC_TYPE SfcType;
         DWORD FlashSize = 0;
         DWORD EccSize = 0;
         DWORD TotalSize = 0;
         DWORD PageCount = 0;
+        DWORD TotalBootloaderSize = 0;
 
         PFLASH_HDR pFlashHdr;
 
@@ -36,6 +38,6 @@ class FlashImage {
         PBYTE pbCeSe5blData;
         BYTE CeSe5blKey[0x10];
 
-        PFLASH_HDR ParseFlashHeader();
-        PBL_HDR_WITH_NONCE ParseBootloaderHeader(DWORD offset);
+        VOID EndianSwapFlashHeader();
+        VOID EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr);
 };

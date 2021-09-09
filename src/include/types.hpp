@@ -41,8 +41,6 @@ typedef long long		   s64;
 #define FLASH_256_512_MB 69206016
 #define FLASH_4_GB       50331648
 
-
-
 // structs
 struct FLASH_HDR {
 	WORD  Magic;

@@ -97,3 +97,33 @@ BOOL utils::WriteFile(PCHAR fileName, PBYTE buffer, DWORD size) {
 	}
 	return FALSE;
 }
+
+DWORD utils::GetPageEcc(PBYTE pbData, PBYTE pbSpare)
+{
+	DWORD i = 0, val = 0, v = 0;
+	PDWORD data = (PDWORD)pbData;
+	for (i = 0; i < 0x1066; i++)
+	{
+		if (!(i & 31))
+		{
+			if (i == 0x1000)
+				data = (PDWORD)pbSpare;
+			v = ~*data++; // byte order: LE
+		}
+		val ^= v & 1;
+		v >>= 1;
+		if (val & 1)
+			val ^= 0x6954559;
+		val >>= 1;
+	}
+	return ~val;
+}
+
+VOID utils::FixPageEcc(PBYTE pbData, PBYTE pbSpare)
+{
+	DWORD val = GetPageEcc(pbData, pbSpare);
+	pbSpare[12] = (pbSpare[12] & 0x3F) + ((val << 6) & 0xC0);
+	pbSpare[13] = (val >> 2) & 0xFF;
+	pbSpare[14] = (val >> 10) & 0xFF;
+	pbSpare[15] = (val >> 18) & 0xFF;
+}
