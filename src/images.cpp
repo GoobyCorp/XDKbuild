@@ -22,7 +22,7 @@ FlashImage::FlashImage(PBYTE data, DWORD size) {
 }
 
 FlashImage::FlashImage(FILE* f) {
-	this->TotalSize = utils::GetFileSize(f);
+	this->TotalSize = Utils::GetFileSize(f);
 	fseek(f, 0, SEEK_SET);
 
 	this->PageCount = this->TotalSize / PAGE_SIZE;
@@ -57,7 +57,7 @@ FlashImage::FlashImage(FILE* f) {
 	EndianSwapBootloaderHeader(this->pCbaSb2blHdr);  // swap to LE
 	this->pbCbaSb2blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCbaSb2blHdr->Magic == SB_2BL)  // devkit-specific
-		Crypto::XeCryptHmacSha(globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
+		Crypto::XeCryptHmacSha(Globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
 	else if(this->pCbaSb2blHdr->Magic == CB_CBA_2BL) {  // retail-specific
 
 	}
@@ -69,7 +69,7 @@ FlashImage::FlashImage(FILE* f) {
 	EndianSwapBootloaderHeader(this->pCbbSc3blHdr);  // swap to LE
 	this->pbCbbSc3blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCbbSc3blHdr->Magic == SC_3BL)  // devkit-specific
-		Crypto::XeCryptHmacSha((PBYTE)globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
+		Crypto::XeCryptHmacSha((PBYTE)Globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
 	else if(this->pCbbSc3blHdr->Magic == CC_CBB_3BL) {  // retail-specific
 		Crypto::XeCryptHmacSha(this->CbaSb2blKey, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
 	}
@@ -111,10 +111,10 @@ FlashImage::FlashImage(FILE* f) {
 	memset(this->pCdSd4blHdr->Nonce, 0, 0x10);
 	memset(this->pCeSe5blHdr->Nonce, 0, 0x10);
 
-	utils::PrintHex(this->CbaSb2blKey, 0x10);
-	utils::PrintHex(this->CbbSc3blKey, 0x10);
-	utils::PrintHex(this->CdSd4blKey, 0x10);
-	utils::PrintHex(this->CeSe5blKey, 0x10);
+	Utils::PrintHex(this->CbaSb2blKey, 0x10);
+	Utils::PrintHex(this->CbbSc3blKey, 0x10);
+	Utils::PrintHex(this->CdSd4blKey, 0x10);
+	Utils::PrintHex(this->CeSe5blKey, 0x10);
 }
 
 FlashImage::~FlashImage() {

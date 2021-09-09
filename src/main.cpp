@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 	printf("XDKbuild v0.06b By Xvistaman2005\n");
 
 	// parse 1BL key argument
-	utils::HexDecode(argv[2], globals::_1BL_KEY);
+	Utils::HexDecode(argv[2], Globals::_1BL_KEY);
 	
 	//open the flash file and unecc image
 	FILE* f = fopen(argv[1], "rb");

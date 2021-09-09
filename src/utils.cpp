@@ -1,6 +1,6 @@
 #include "stdafx.hpp"
 
-int utils::char2int(char input) {
+int Utils::char2int(char input) {
 	if(input >= '0' && input <= '9')
 		return input - '0';
 	if(input >= 'A' && input <= 'F')
@@ -10,14 +10,14 @@ int utils::char2int(char input) {
 	throw invalid_argument("Invalid input character specified!");
 }
 
-VOID utils::PrintHex(PBYTE data, DWORD size) {
+VOID Utils::PrintHex(PBYTE data, DWORD size) {
 	for(DWORD i = 0; i < size; i++) {
 		printf("%02X", data[i]);
 	}
 	printf("\n");
 }
 
-int utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
+int Utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
 	if(strlen(pcHex) % 2 != 0)
 		return 0;
 
@@ -29,7 +29,7 @@ int utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
 	return 0;
 }
 
-DWORD utils::GetFileSize(FILE* f) {
+DWORD Utils::GetFileSize(FILE* f) {
 	int len;
 	if(f == NULL)
 	{
@@ -41,7 +41,7 @@ DWORD utils::GetFileSize(FILE* f) {
 	return len;
 }
 
-VOID utils::DumpBufferHex(PCHAR filename, PVOID buffer, int size) {
+VOID Utils::DumpBufferHex(PCHAR filename, PVOID buffer, int size) {
 	FILE* fptr;
 	printf("writing 0x%x bytes to %s...", size, filename);
 	if((buffer != NULL) && (filename != NULL) && (size != 0))
@@ -66,7 +66,7 @@ VOID utils::DumpBufferHex(PCHAR filename, PVOID buffer, int size) {
 	printf("done!\n");
 }
 
-PBYTE utils::ReadFile(PCHAR fileName, PDWORD pdwSize) {
+PBYTE Utils::ReadFile(PCHAR fileName, PDWORD pdwSize) {
 	FILE* fin;
 	PBYTE buf = NULL;
 	fin = fopen(fileName, "rb");
@@ -89,7 +89,7 @@ PBYTE utils::ReadFile(PCHAR fileName, PDWORD pdwSize) {
 	return buf;
 }
 
-BOOL utils::WriteFile(PCHAR fileName, PBYTE buffer, DWORD size) {
+BOOL Utils::WriteFile(PCHAR fileName, PBYTE buffer, DWORD size) {
 	FILE* fo = fopen(fileName, "wb");
 	if(fo != NULL) {
 		if(fwrite(buffer, size, 1, fo) == size)
@@ -98,7 +98,7 @@ BOOL utils::WriteFile(PCHAR fileName, PBYTE buffer, DWORD size) {
 	return FALSE;
 }
 
-DWORD utils::GetPageEcc(PBYTE pbData, PBYTE pbSpare)
+DWORD Utils::GetPageEcc(PBYTE pbData, PBYTE pbSpare)
 {
 	DWORD i = 0, val = 0, v = 0;
 	PDWORD data = (PDWORD)pbData;
@@ -119,7 +119,7 @@ DWORD utils::GetPageEcc(PBYTE pbData, PBYTE pbSpare)
 	return ~val;
 }
 
-VOID utils::FixPageEcc(PBYTE pbData, PBYTE pbSpare)
+VOID Utils::FixPageEcc(PBYTE pbData, PBYTE pbSpare)
 {
 	DWORD val = GetPageEcc(pbData, pbSpare);
 	pbSpare[12] = (pbSpare[12] & 0x3F) + ((val << 6) & 0xC0);

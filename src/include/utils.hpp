@@ -1,4 +1,4 @@
-class utils {
+class Utils {
     public:
         static VOID PrintHex(PBYTE data, DWORD size);
         static int HexDecode(PCHAR pcHex, PBYTE pbOut);
