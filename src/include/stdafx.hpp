@@ -10,8 +10,8 @@
 #include "types.hpp"
 
 // CryptoPP
-#include "cryptlib.h"
-using CryptoPP::Exception;
+//#include "cryptlib.h"
+//using CryptoPP::Exception;
 #include "hmac.h"
 using CryptoPP::HMAC;
 #include "sha.h"

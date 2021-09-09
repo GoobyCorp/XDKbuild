@@ -4,12 +4,15 @@ class FlashImage {
         FlashImage(FILE* f);
         ~FlashImage();
     private:
+        // pointers
         PBYTE pbFlashData;
         PBYTE pbEccData;
-        DWORD FlashSize;
-        DWORD EccSize;
-        DWORD TotalSize;
-        DWORD PageCount;
+
+        // variables
+        DWORD FlashSize = 0;
+        DWORD EccSize = 0;
+        DWORD TotalSize = 0;
+        DWORD PageCount = 0;
 
         PFLASH_HDR pFlashHdr;
 

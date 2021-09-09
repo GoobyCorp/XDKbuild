@@ -43,48 +43,45 @@ FlashImage::FlashImage(FILE* f) {
 	DWORD offset = this->pFlashHdr->CbOffset;
 	this->pCbaSb2blHdr = ParseBootloaderHeader(offset);
 	this->pbCbaSb2blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
-	//memcpy(this->pbCbaSb2blData, this->pbFlashData + offset, this->pCbaSb2blHdr->Size);
 	if(this->pCbaSb2blHdr->Magic == SB_2BL) {  // devkit-specific
-		// Crypto::XeCryptHmacSha(globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
+		Crypto::XeCryptHmacSha(globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
 	} else if(this->pCbaSb2blHdr->Magic == CB_CBA_2BL) {  // retail-specific
 
 	}
-	// Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData);
+	Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData);
 
 	// 3BL parsing
 	offset += this->pCbaSb2blHdr->Size;
 	this->pCbbSc3blHdr = ParseBootloaderHeader(offset);
 	this->pbCbbSc3blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
-	//memcpy(this->pbCbbSc3blData, this->pbFlashData + offset, this->pCbbSc3blHdr->Size);
 	if(this->pCbbSc3blHdr->Magic == SC_3BL) {  // devkit-specific
-		// Crypto::XeCryptHmacSha((PBYTE)globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
+		Crypto::XeCryptHmacSha((PBYTE)globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
 	} else if(this->pCbbSc3blHdr->Magic == CC_CBB_3BL) {  // retail-specific
-		// Crypto::XeCryptHmacSha(this->CbaSb2blKey, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
+		Crypto::XeCryptHmacSha(this->CbaSb2blKey, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
 	}
-	// Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData);
+	Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData);
 
 	// 4BL parsing
 	offset += this->pCbbSc3blHdr->Size;
 	this->pCdSd4blHdr = ParseBootloaderHeader(offset);
 	this->pbCdSd4blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
-	//memcpy(this->pbCdSd4blData, this->pbFlashData + offset, this->pCdSd4blHdr->Size);
 	if(this->pCdSd4blHdr->Magic == SD_4BL) {  // devkit-specific
-		// Crypto::XeCryptHmacSha(this->CbbSc3blKey, 0x10, this->pCdSd4blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CdSd4blKey, 0x10);
+		Crypto::XeCryptHmacSha(this->CbbSc3blKey, 0x10, this->pCdSd4blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CdSd4blKey, 0x10);
 	} else if(this->pCdSd4blHdr->Magic == CD_4BL) {  // retail-specific
 
 	}
-	// Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData);
+	Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData);
 	
 	// 5BL parsing
 	offset += this->pCdSd4blHdr->Size;
 	this->pCeSe5blHdr = ParseBootloaderHeader(offset);
 	this->pbCeSe5blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCeSe5blHdr->Magic == SE_5BL) {  // devkit-specific
-		// Crypto::XeCryptHmacSha(this->CdSd4blKey, 0x10, this->pCeSe5blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CeSe5blKey, 0x10);
+		Crypto::XeCryptHmacSha(this->CdSd4blKey, 0x10, this->pCeSe5blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CeSe5blKey, 0x10);
 	} else if(this->pCeSe5blHdr->Magic == CE_5BL) {  // retail-specific
 		
 	}
-	// Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData);
+	Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData);
 
 
 	utils::PrintHex(this->CbaSb2blKey, 0x10);
