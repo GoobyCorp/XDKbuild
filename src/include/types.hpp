@@ -47,12 +47,12 @@ struct FLASH_HDR {
 	WORD  Build;
 	WORD  QFE;
 	WORD  Flags;
-	DWORD CbOffset;
-	DWORD Sf1Offset;
+	DWORD EntryPoint;
+	DWORD Size;
 	BYTE  Copyright[0x40];
 	BYTE  Padding[0x10];
 	DWORD KvLength;
-	DWORD Sf2Offset;
+	DWORD PatchOffset;
 	WORD  PatchSlots;
 	WORD  KvVersion;
 	DWORD KvOffset;

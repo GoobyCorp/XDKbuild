@@ -31,3 +31,8 @@ VOID Crypto::XeCryptRc4(PBYTE pbKey, DWORD cbKey, PBYTE pbIn, DWORD cbIn, PBYTE 
     enc.SetKey(pbKey, cbKey);
 	enc.ProcessData(pbOut, pbIn, cbIn);
 }
+
+VOID Crypto::XeCryptRandom(PBYTE buffer, DWORD size) {
+	RDRAND prng;
+	prng.GenerateBlock(buffer, size);
+}

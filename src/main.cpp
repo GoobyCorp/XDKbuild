@@ -173,7 +173,22 @@ int main(int argc, char* argv[])
 
 	FlashImage fi(f);
 
+	FILE* scf = fopen(argv[3], "rb");
+	if(scf == NULL) {
+		printf("Could not open SC bootloader file\n");
+		return ERR_CANT_OPEN_SC_FILE;
+	}
+	DWORD scSize = Utils::GetFileSize(scf);
+	PBYTE pbCbbSc3bl = (PBYTE)malloc(scSize);
+	fread(pbCbbSc3bl, scSize, 0x01, scf);
 	fclose(f);
+
+	if(fi.ReplaceBootloader(pbCbbSc3bl, scSize) == TRUE)
+		printf("Bootloader replacement succeeded!\n");
+	else
+		printf("Bootloader replacement failed!\n");
+
+	free(pbCbbSc3bl);
 
 	/*
 	f_sz = utils::GetFileSize(f);
