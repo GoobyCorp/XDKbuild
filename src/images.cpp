@@ -59,10 +59,10 @@ VOID FlashImage::ParseImage() {
 	this->EndianSwapFlashHeader(this->pFlashHdr);  // swap to LE
 
 	// 2BL parsing
-	DWORD offset = this->pFlashHdr->EntryPoint;
-	this->pCbaSb2blHdr = (PBL_HDR_WITH_NONCE)(this->pbFlashData + offset);
+	PBYTE pbBlAddr = this->pbFlashData + this->pFlashHdr->EntryPoint;
+	this->pCbaSb2blHdr = (PBL_HDR_WITH_NONCE)pbBlAddr;
 	this->EndianSwapBootloaderHeader(this->pCbaSb2blHdr);  // swap to LE
-	this->pbCbaSb2blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	this->pbCbaSb2blData = pbBlAddr + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCbaSb2blHdr->Magic == SB_2BL)  // devkit-specific
 		Crypto::XeCryptHmacSha(Globals::_1BL_KEY, 0x10, this->pCbaSb2blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbaSb2blKey, 0x10);
 	else if(this->pCbaSb2blHdr->Magic == CB_CBA_2BL) {  // retail-specific
@@ -71,10 +71,10 @@ VOID FlashImage::ParseImage() {
 	Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData);
 
 	// 3BL parsing
-	offset += this->pCbaSb2blHdr->Size;
-	this->pCbbSc3blHdr = (PBL_HDR_WITH_NONCE)(this->pbFlashData + offset);
+	pbBlAddr += this->pCbaSb2blHdr->Size;
+	this->pCbbSc3blHdr = (PBL_HDR_WITH_NONCE)pbBlAddr;
 	this->EndianSwapBootloaderHeader(this->pCbbSc3blHdr);  // swap to LE
-	this->pbCbbSc3blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	this->pbCbbSc3blData = pbBlAddr + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCbbSc3blHdr->Magic == SC_3BL)  // devkit-specific
 		Crypto::XeCryptHmacSha((PBYTE)Globals::ZERO_KEY, 0x10, this->pCbbSc3blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CbbSc3blKey, 0x10);
 	else if(this->pCbbSc3blHdr->Magic == CC_CBB_3BL) {  // retail-specific
@@ -83,10 +83,10 @@ VOID FlashImage::ParseImage() {
 	Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData);
 
 	// 4BL parsing
-	offset += this->pCbbSc3blHdr->Size;
-	this->pCdSd4blHdr = (PBL_HDR_WITH_NONCE)(this->pbFlashData + offset);
+	pbBlAddr += this->pCbbSc3blHdr->Size;
+	this->pCdSd4blHdr = (PBL_HDR_WITH_NONCE)pbBlAddr;
 	this->EndianSwapBootloaderHeader(this->pCdSd4blHdr);  // swap to LE
-	this->pbCdSd4blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	this->pbCdSd4blData = pbBlAddr + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCdSd4blHdr->Magic == SD_4BL)  // devkit-specific
 		Crypto::XeCryptHmacSha(this->CbbSc3blKey, 0x10, this->pCdSd4blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CdSd4blKey, 0x10);
 	else if(this->pCdSd4blHdr->Magic == CD_4BL) {  // retail-specific
@@ -95,10 +95,10 @@ VOID FlashImage::ParseImage() {
 	Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData);
 	
 	// 5BL parsing
-	offset += this->pCdSd4blHdr->Size;
-	this->pCeSe5blHdr = (PBL_HDR_WITH_NONCE)(this->pbFlashData + offset);
+	pbBlAddr += this->pCdSd4blHdr->Size;
+	this->pCeSe5blHdr = (PBL_HDR_WITH_NONCE)pbBlAddr;
 	this->EndianSwapBootloaderHeader(this->pCeSe5blHdr);  // swap to LE
-	this->pbCeSe5blData = this->pbFlashData + offset + sizeof(BL_HDR_WITH_NONCE);
+	this->pbCeSe5blData = pbBlAddr + sizeof(BL_HDR_WITH_NONCE);
 	if(this->pCeSe5blHdr->Magic == SE_5BL)  // devkit-specific
 		Crypto::XeCryptHmacSha(this->CdSd4blKey, 0x10, this->pCeSe5blHdr->Nonce, 0x10, NULL, 0, NULL, 0, this->CeSe5blKey, 0x10);
 	else if(this->pCeSe5blHdr->Magic == CE_5BL) {  // retail-specific
@@ -209,48 +209,48 @@ BOOL FlashImage::RebuildImage(DWORD oldBlSize) {
 		memset(pbNewFlashData + pNewFlashHdr->EntryPoint, 0xFF, this->TotalBootloaderSize);
 
 	// 2BL
-	PBYTE blAddr = pbNewFlashData + pNewFlashHdr->EntryPoint;
+	PBYTE pbBlAddr = pbNewFlashData + pNewFlashHdr->EntryPoint;
 	// copy 2BL header
-	memcpy(blAddr, this->pCbaSb2blHdr, sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr, this->pCbaSb2blHdr, sizeof(BL_HDR_WITH_NONCE));
 	// fix the bootloader header
-	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)blAddr);  // swap to BE
+	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)pbBlAddr);  // swap to BE
 	// copy 2BL data
-	memcpy(blAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCbaSb2blData, this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
 	// encrypt 2BL data
-	Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, blAddr + sizeof(BL_HDR_WITH_NONCE), this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), blAddr + sizeof(BL_HDR_WITH_NONCE));
+	Crypto::XeCryptRc4(this->CbaSb2blKey, 0x10, pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pCbaSb2blHdr->Size - sizeof(BL_HDR_WITH_NONCE), pbBlAddr + sizeof(BL_HDR_WITH_NONCE));
 
 	// 3BL
-	blAddr += this->pCbaSb2blHdr->Size;
+	pbBlAddr += this->pCbaSb2blHdr->Size;
 	// copy 3BL header
-	memcpy(blAddr, this->pCbbSc3blHdr, sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr, this->pCbbSc3blHdr, sizeof(BL_HDR_WITH_NONCE));
 	// fix the bootloader header
-	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)blAddr);  // swap to BE
+	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)pbBlAddr);  // swap to BE
 	// copy 3BL data
-	memcpy(blAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCbbSc3blData, this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
 	// encrypt 3BL data
-	Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, blAddr + sizeof(BL_HDR_WITH_NONCE), this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), blAddr + sizeof(BL_HDR_WITH_NONCE));
+	Crypto::XeCryptRc4(this->CbbSc3blKey, 0x10, pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pCbbSc3blHdr->Size - sizeof(BL_HDR_WITH_NONCE), pbBlAddr + sizeof(BL_HDR_WITH_NONCE));
 
 	// 4BL
-	blAddr += this->pCbbSc3blHdr->Size;
+	pbBlAddr += this->pCbbSc3blHdr->Size;
 	// copy 4BL header
-	memcpy(blAddr, this->pCdSd4blHdr, sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr, this->pCdSd4blHdr, sizeof(BL_HDR_WITH_NONCE));
 	// fix the bootloader header
-	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)blAddr);  // swap to BE
+	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)pbBlAddr);  // swap to BE
 	// copy 4BL data
-	memcpy(blAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCdSd4blData, this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
 	// encrypt 4BL data
-	Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, blAddr + sizeof(BL_HDR_WITH_NONCE), this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), blAddr + sizeof(BL_HDR_WITH_NONCE));
+	Crypto::XeCryptRc4(this->CdSd4blKey, 0x10, pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pCdSd4blHdr->Size - sizeof(BL_HDR_WITH_NONCE), pbBlAddr + sizeof(BL_HDR_WITH_NONCE));
 
 	// 5BL
-	blAddr += this->pCdSd4blHdr->Size;
+	pbBlAddr += this->pCdSd4blHdr->Size;
 	// copy 5BL header
-	memcpy(blAddr, this->pCeSe5blHdr, sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr, this->pCeSe5blHdr, sizeof(BL_HDR_WITH_NONCE));
 	// fix the bootloader header
-	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)blAddr);  // swap to BE
+	this->EndianSwapBootloaderHeader((PBL_HDR_WITH_NONCE)pbBlAddr);  // swap to BE
 	// copy 5BL data
-	memcpy(blAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
+	memcpy(pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE));
 	// encrypt 5BL data
-	Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, blAddr + sizeof(BL_HDR_WITH_NONCE), this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), blAddr + sizeof(BL_HDR_WITH_NONCE));
+	Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, pbBlAddr + sizeof(BL_HDR_WITH_NONCE), this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), pbBlAddr + sizeof(BL_HDR_WITH_NONCE));
 
 	// fix flash header
 	this->EndianSwapFlashHeader(pNewFlashHdr);  // swap to BE
