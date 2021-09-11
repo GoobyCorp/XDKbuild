@@ -44,7 +44,9 @@ class FlashImage {
 
         VOID ParseImage();
         VOID FreeImageMemory();
+        VOID EndianSwapImageData(PBYTE data);
         VOID EndianSwapFlashHeader(PFLASH_HDR fhdr);
+        VOID EndianSwapBootloaderHeader(PBL_HDR bhdr);
         VOID EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr);
         VOID GenerateKeys(BOOL devkit);
         BOOL RebuildImage(DWORD oldBlSize);

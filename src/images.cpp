@@ -113,7 +113,7 @@ VOID FlashImage::ParseImage() {
 	this->TotalBootloaderSize += this->pCeSe5blHdr->Size;
 
 	// null the keys
-	this->NullKeys();
+	// this->NullKeys();
 }
 
 VOID FlashImage::FreeImageMemory() {
@@ -145,6 +145,16 @@ VOID FlashImage::EndianSwapFlashHeader(PFLASH_HDR fhdr) {
 	es32(fhdr->SmcConfigOffset);
 	es32(fhdr->SmcLength);
 	es32(fhdr->SmcOffset);
+}
+
+VOID FlashImage::EndianSwapBootloaderHeader(PBL_HDR bhdr) {
+	es16(bhdr->Magic);
+	es16(bhdr->Build);
+	es16(bhdr->QFE);
+	es16(bhdr->Flags);
+	es32(bhdr->EntryPoint);
+	es32(bhdr->Size);
+	// nonce
 }
 
 VOID FlashImage::EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr) {
@@ -263,8 +273,6 @@ BOOL FlashImage::RebuildImage(DWORD oldBlSize) {
 	this->pbEccData = pbNewEccData;
 	this->FileSize = this->FlashSize + this->EccSize;
 	this->PageCount = this->FileSize / PAGE_SIZE;
-
-	// Utils::WriteFile("test.bin", this->pbFlashData, this->FlashSize);
 	
 	// parse the new image
 	this->ParseImage();
@@ -272,13 +280,32 @@ BOOL FlashImage::RebuildImage(DWORD oldBlSize) {
 	return TRUE;
 }
 
+VOID FlashImage::EndianSwapImageData(PBYTE data) {
+	// image must be parsed first!
+
+	// flash header
+	EndianSwapFlashHeader(this->pFlashHdr);
+
+	// 2BL
+	EndianSwapBootloaderHeader(this->pCbaSb2blHdr);
+
+	// 3BL
+	EndianSwapBootloaderHeader(this->pCbbSc3blHdr);
+
+	// 4BL
+	EndianSwapBootloaderHeader(this->pCdSd4blHdr);
+
+	// 5BL
+	EndianSwapBootloaderHeader(this->pCeSe5blHdr);
+}
+
 BOOL FlashImage::ReplaceBootloader(PBYTE data, DWORD size) {
 	PBL_HDR_WITH_NONCE bhdr = (PBL_HDR_WITH_NONCE)data;
 	this->EndianSwapBootloaderHeader(bhdr);  // swap to LE
 
-	// size mismatch
+	// fix size mismatch
 	if(bhdr->Size != size)
-		return FALSE;
+		bhdr->Size = size;
 
 	BOOL devkit = TRUE;
 	DWORD oldSize = this->TotalBootloaderSize;
@@ -359,5 +386,18 @@ BOOL FlashImage::ReplaceBootloader(PBYTE data, DWORD size) {
 }
 
 VOID FlashImage::Output(PCHAR fileName) {
-	// Utils::WriteFile()
+	PBYTE pbOutData = (PBYTE)malloc(this->FileSize);
+	PBYTE pbOutTmp = pbOutData;
+	this->EndianSwapImageData(this->pbFlashData);  // swap to BE
+	for(DWORD pageNum = 0; pageNum < this->PageCount; pageNum++) {
+		// recalculate ecc bits
+		Utils::FixPageEcc(this->pbFlashData + (pageNum * PAGE_DATA_SIZE), this->pbEccData + (pageNum * PAGE_ECC_SIZE));
+		memcpy(pbOutTmp, this->pbFlashData + (pageNum * PAGE_DATA_SIZE), PAGE_DATA_SIZE);
+		pbOutTmp += PAGE_DATA_SIZE;
+		memcpy(pbOutTmp, this->pbEccData + (pageNum * PAGE_ECC_SIZE), PAGE_ECC_SIZE);
+		pbOutTmp += PAGE_ECC_SIZE;
+	}
+	Utils::WriteFile(fileName, pbOutData, this->FileSize);
+	free(pbOutData);
+	this->EndianSwapImageData(this->pbFlashData);  // swap to LE
 }

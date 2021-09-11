@@ -173,22 +173,73 @@ int main(int argc, char* argv[])
 
 	FlashImage fi(f);
 
-	FILE* scf = fopen(argv[3], "rb");
-	if(scf == NULL) {
+	fclose(f);
+
+	// SB
+	f = fopen("SB.bin", "rb");
+	if(f == NULL) {
 		printf("Could not open SC bootloader file\n");
 		return ERR_CANT_OPEN_SC_FILE;
 	}
-	DWORD scSize = Utils::GetFileSize(scf);
-	PBYTE pbCbbSc3bl = (PBYTE)malloc(scSize);
-	fread(pbCbbSc3bl, scSize, 0x01, scf);
+	DWORD blSize = Utils::GetFileSize(f);
+	PBYTE pbBl = (PBYTE)malloc(blSize);
+	fread(pbBl, blSize, 0x01, f);
 	fclose(f);
-
-	if(fi.ReplaceBootloader(pbCbbSc3bl, scSize) == TRUE)
+	if(fi.ReplaceBootloader(pbBl, blSize) == TRUE)
 		printf("Bootloader replacement succeeded!\n");
 	else
 		printf("Bootloader replacement failed!\n");
+	free(pbBl);
 
-	free(pbCbbSc3bl);
+	// SC
+	f = fopen("SC.bin", "rb");
+	if(f == NULL) {
+		printf("Could not open SC bootloader file\n");
+		return ERR_CANT_OPEN_SC_FILE;
+	}
+	blSize = Utils::GetFileSize(f);
+	pbBl = (PBYTE)malloc(blSize);
+	fread(pbBl, blSize, 0x01, f);
+	fclose(f);
+	if(fi.ReplaceBootloader(pbBl, blSize) == TRUE)
+		printf("Bootloader replacement succeeded!\n");
+	else
+		printf("Bootloader replacement failed!\n");
+	free(pbBl);
+
+	// SD
+	f = fopen("SD.bin", "rb");
+	if(f == NULL) {
+		printf("Could not open SC bootloader file\n");
+		return ERR_CANT_OPEN_SC_FILE;
+	}
+	blSize = Utils::GetFileSize(f);
+	pbBl = (PBYTE)malloc(blSize);
+	fread(pbBl, blSize, 0x01, f);
+	fclose(f);
+	if(fi.ReplaceBootloader(pbBl, blSize) == TRUE)
+		printf("Bootloader replacement succeeded!\n");
+	else
+		printf("Bootloader replacement failed!\n");
+	free(pbBl);
+
+	// SE
+	f = fopen("SE.bin", "rb");
+	if(f == NULL) {
+		printf("Could not open SC bootloader file\n");
+		return ERR_CANT_OPEN_SC_FILE;
+	}
+	blSize = Utils::GetFileSize(f);
+	pbBl = (PBYTE)malloc(blSize);
+	fread(pbBl, blSize, 0x01, f);
+	fclose(f);
+	if(fi.ReplaceBootloader(pbBl, blSize) == TRUE)
+		printf("Bootloader replacement succeeded!\n");
+	else
+		printf("Bootloader replacement failed!\n");
+	free(pbBl);
+
+	fi.Output("test.bin");
 
 	/*
 	f_sz = utils::GetFileSize(f);
