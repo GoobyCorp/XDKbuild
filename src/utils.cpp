@@ -73,17 +73,13 @@ PBYTE Utils::ReadFile(PCHAR fileName, PDWORD pdwSize) {
 	if(fin != NULL)
 	{
 		int sz = GetFileSize(fin);
-		printf("loading file %s 0x%x bytes...", fileName, sz);
 		buf = (PBYTE)malloc(sz);
 		if(buf != NULL)
 		{
 			fread(buf, sz, 1, fin);
 			if(pdwSize != NULL)
 				*pdwSize = sz;
-			printf("done!\n");
 		}
-		else
-			printf("failed to allocate 0x%x bytes!\n", sz);
 		fclose(fin);
 	}
 	return buf;
@@ -92,8 +88,10 @@ PBYTE Utils::ReadFile(PCHAR fileName, PDWORD pdwSize) {
 BOOL Utils::WriteFile(PCHAR fileName, PBYTE buffer, DWORD size) {
 	FILE* fo = fopen(fileName, "wb");
 	if(fo != NULL) {
-		if(fwrite(buffer, size, 1, fo) == size)
+		if(fwrite(buffer, size, 1, fo) == size) {
+			fclose(fo);
 			return TRUE;
+		}
 	}
 	return FALSE;
 }

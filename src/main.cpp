@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 {
 	// usage
 	if(argc != 4) {
-		printf("Usage: XDKbuild v0.06b [input image file] [1bl_key] [sc_file]\n");
+		printf("Usage: XDKbuild v0.06b [input image file] [1bl_key] [output image file]\n");
 		printf("By Xvistaman2005\n");
 		return ERR_NOT_ENOUGH_ARGS;
 	}
@@ -165,20 +165,21 @@ int main(int argc, char* argv[])
 	
 	//open the flash file and unecc image
 	FILE* f = fopen(argv[1], "rb");
-	
 	if(f == NULL) {
 		printf("Could not open input image file\n");
 		return ERR_CANT_OPEN_INPUT_FILE;
 	}
 
+	// parse the image file
 	FlashImage fi(f);
 
+	// close the image file
 	fclose(f);
 
 	// SB
 	f = fopen("SB.bin", "rb");
 	if(f == NULL) {
-		printf("Could not open SC bootloader file\n");
+		printf("Could not open SB bootloader file\n");
 		return ERR_CANT_OPEN_SC_FILE;
 	}
 	DWORD blSize = Utils::GetFileSize(f);
@@ -210,7 +211,7 @@ int main(int argc, char* argv[])
 	// SD
 	f = fopen("SD.bin", "rb");
 	if(f == NULL) {
-		printf("Could not open SC bootloader file\n");
+		printf("Could not open SD bootloader file\n");
 		return ERR_CANT_OPEN_SC_FILE;
 	}
 	blSize = Utils::GetFileSize(f);
@@ -226,7 +227,7 @@ int main(int argc, char* argv[])
 	// SE
 	f = fopen("SE.bin", "rb");
 	if(f == NULL) {
-		printf("Could not open SC bootloader file\n");
+		printf("Could not open SE bootloader file\n");
 		return ERR_CANT_OPEN_SC_FILE;
 	}
 	blSize = Utils::GetFileSize(f);
@@ -239,7 +240,7 @@ int main(int argc, char* argv[])
 		printf("Bootloader replacement failed!\n");
 	free(pbBl);
 
-	fi.Output("test.bin");
+	fi.Output(argv[3]);
 
 	printf("Done!\n");
 
