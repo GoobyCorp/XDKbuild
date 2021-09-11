@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	f = fopen("SB.bin", "rb");
 	if(f == NULL) {
 		printf("Could not open SB bootloader file\n");
-		return ERR_CANT_OPEN_SC_FILE;
+		return ERR_CANT_OPEN_SB_FILE;
 	}
 	DWORD blSize = Utils::GetFileSize(f);
 	PBYTE pbBl = (PBYTE)malloc(blSize);
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	f = fopen("SD.bin", "rb");
 	if(f == NULL) {
 		printf("Could not open SD bootloader file\n");
-		return ERR_CANT_OPEN_SC_FILE;
+		return ERR_CANT_OPEN_SD_FILE;
 	}
 	blSize = Utils::GetFileSize(f);
 	pbBl = (PBYTE)malloc(blSize);
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 	f = fopen("SE.bin", "rb");
 	if(f == NULL) {
 		printf("Could not open SE bootloader file\n");
-		return ERR_CANT_OPEN_SC_FILE;
+		return ERR_CANT_OPEN_SE_FILE;
 	}
 	blSize = Utils::GetFileSize(f);
 	pbBl = (PBYTE)malloc(blSize);
