@@ -241,6 +241,8 @@ int main(int argc, char* argv[])
 
 	fi.Output("test.bin");
 
+	printf("Done!\n");
+
 	/*
 	f_sz = utils::GetFileSize(f);
 
