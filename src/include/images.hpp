@@ -9,6 +9,7 @@ class FlashImage {
         ~FlashImage();
 
         BOOL ReplaceBootloader(PBYTE data, DWORD size);
+        BOOL PatchBootloader(PATCH_BL bl, PBYTE data, DWORD size);
         VOID Output(PCHAR fileName);
     private:
         // pointers

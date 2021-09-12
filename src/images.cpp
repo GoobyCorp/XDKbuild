@@ -385,6 +385,43 @@ BOOL FlashImage::ReplaceBootloader(PBYTE data, DWORD size) {
 	return TRUE;
 }
 
+BOOL FlashImage::PatchBootloader(PATCH_BL target, PBYTE data, DWORD size) {
+	PBYTE pbBlData;
+	switch(target) {
+		case PATCH_2BL: {
+			pbBlData = this->pbCbaSb2blData;
+			break;
+		}
+		case PATCH_3BL: {
+			pbBlData = this->pbCbbSc3blData;
+			break;
+		}
+		case PATCH_4BL: {
+			pbBlData = this->pbCdSd4blData;
+			break;
+		}
+		default: {
+			return FALSE;
+		}
+	}
+
+	// read xebuild patches
+	PBYTE pbData = data;
+	while(true) {
+		DWORD addr = bswap32(*(PDWORD)pbData);
+		if(addr == 0xFFFFFFFF)
+			break;
+		pbData += sizeof(DWORD);
+		DWORD sizeInts = bswap32(*(PDWORD)(pbData));
+		DWORD sizeBytes = sizeInts * sizeof(DWORD);
+		pbData += sizeof(DWORD);
+		memcpy(pbBlData + addr, pbData, sizeBytes);
+		pbData += sizeBytes;
+	}
+
+	return TRUE;
+}
+
 VOID FlashImage::Output(PCHAR fileName) {
 	PBYTE pbOutData = (PBYTE)malloc(this->FileSize);
 	PBYTE pbOutTmp = pbOutData;

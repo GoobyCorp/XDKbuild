@@ -105,6 +105,13 @@ enum BL_MAGIC {
 	SG_7BL = 0x5347
 };
 
+// patches
+enum PATCH_BL {
+	PATCH_2BL = 0,
+	PATCH_3BL,
+	PATCH_4BL
+};
+
 // errors
 enum {
 	ERR_NONE = 0,
