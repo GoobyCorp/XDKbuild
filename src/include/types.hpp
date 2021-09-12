@@ -144,4 +144,4 @@ typedef WORD*  PWORD;
 typedef DWORD* PDWORD;
 typedef QWORD* PQWORD;
 
-#endif // _TYPES_H
+#endif // _TYPES_HPP
