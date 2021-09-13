@@ -33,8 +33,6 @@ typedef long long		   s64;
 
 #define SHA_DIGEST_SIZE 0x14  // 20
 
-#define PAGE_SIZE 528
-#define PAGE_DATA_SIZE 512
 #define PAGE_ECC_SIZE 16
 
 #define FLASH_16_MB      17301504
@@ -127,7 +125,8 @@ enum {
 
 // System Flash Controller (SFC) types
 enum SFC_TYPE {
-	SFC_SMALL_ON_SMALL = 0,
+	SFC_NONE = 0,
+	SFC_SMALL_ON_SMALL,
 	SFC_SMALL_ON_BIG,
 	SFC_BIG_ON_BIG,
 	SFC_EMMC

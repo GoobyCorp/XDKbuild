@@ -4,7 +4,9 @@ class FlashImage {
         DWORD FlashSize = 0;
         DWORD EccSize = 0;
 
-        FlashImage(PBYTE data, DWORD size);
+        DWORD PageSize = 0;
+        DWORD PageDataSize = 0;
+
         FlashImage(FILE* f);
         ~FlashImage();
 
@@ -17,7 +19,7 @@ class FlashImage {
         PBYTE pbEccData = 0;
 
         // variables
-        SFC_TYPE SfcType;
+        SFC_TYPE SfcType = SFC_NONE;
         DWORD PageCount = 0;
         DWORD TotalBootloaderSize = 0;
 
@@ -51,5 +53,5 @@ class FlashImage {
         VOID EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr);
         VOID GenerateKeys(BOOL devkit);
         BOOL RebuildImage(DWORD oldBlSize);
-        VOID NullKeys();
+        VOID NullKeysAndNonces();
 };
