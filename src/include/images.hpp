@@ -1,5 +1,6 @@
 class FlashImage {
     public:
+        FILE* pFile = 0;
         DWORD FileSize = 0;
         DWORD FlashSize = 0;
         DWORD EccSize = 0;
@@ -11,7 +12,7 @@ class FlashImage {
         ~FlashImage();
 
         BOOL ReplaceBootloader(PBYTE data, DWORD size);
-        BOOL PatchBootloader(PATCH_BL bl, PBYTE data, DWORD size);
+        BOOL PatchBootloader(PATCH_BL bl, PBYTE data);
         VOID Output(PCHAR fileName);
     private:
         // pointers
@@ -45,9 +46,11 @@ class FlashImage {
         PBYTE pbCeSe5blData = 0;
         BYTE CeSe5blKey[0x10];
 
+        VOID GuessSfcTypeForFile();
+        VOID GuessSfcTypeForBytes();
         VOID ParseImage();
         VOID FreeImageMemory();
-        VOID EndianSwapImageData(PBYTE data);
+        VOID EndianSwapImageData();
         VOID EndianSwapFlashHeader(PFLASH_HDR fhdr);
         VOID EndianSwapBootloaderHeader(PBL_HDR bhdr);
         VOID EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr);

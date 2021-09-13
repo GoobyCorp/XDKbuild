@@ -2,18 +2,13 @@
 
 // flash images
 FlashImage::FlashImage(FILE* f) {
-	this->FileSize = Utils::GetFileSize(f);
-	fseek(f, 0, SEEK_SET);
+	this->pFile = f;
+
+	this->FileSize = Utils::GetFileSize(this->pFile);
+	fseek(this->pFile, 0, SEEK_SET);
 
 	// guess SFC type early
-	if(this->FileSize == FLASH_4_GB) {
-		this->SfcType = SFC_EMMC;
-		this->PageSize = 512;
-		this->PageDataSize = 512;
-	} else {
-		this->PageSize = 528;
-		this->PageDataSize = 512;
-	}
+	this->GuessSfcTypeForFile();
 
 	this->PageCount = this->FileSize / this->PageSize;
 	this->pbFlashData = (PBYTE)malloc(this->PageCount * this->PageDataSize);
@@ -38,17 +33,56 @@ FlashImage::~FlashImage() {
 	this->FreeImageMemory();
 }
 
-VOID FlashImage::ParseImage() {
-	// guess SFC type late
-	if(this->SfcType != SFC_EMMC) {
-		if(this->pbEccData[0x210] == 0x01)
-			this->SfcType = SFC_SMALL_ON_SMALL;
-		else if(this->pbEccData[0x211] == 0x01)
-			this->SfcType = SFC_SMALL_ON_BIG;
-		else if(this->pbEccData[0x1010] == 0xFF && this->pbEccData[0x1011] == 0x01)
-			this->SfcType = SFC_BIG_ON_BIG;
+VOID FlashImage::GuessSfcTypeForFile() {
+	BYTE tss, tsb;
+	WORD tbb;
+	fseek(this->pFile, 528 * 32 + 512, SEEK_SET);
+	fread(&tss, 1, 1, this->pFile);
+	fseek(this->pFile, 528 * 32 + 513, SEEK_SET);
+	fread(&tsb, 1, 1, this->pFile);
+	fseek(this->pFile, 528 * 0x100 + 512, SEEK_SET);
+	fread(&tbb, sizeof(WORD), 1, this->pFile);
+	es16(tbb);
+	fseek(this->pFile, 0, SEEK_SET);
+
+	if(tss == 0x01)
+		this->SfcType = SFC_SMALL_ON_SMALL;
+	else if(tsb == 0x01)
+		this->SfcType = SFC_SMALL_ON_BIG;
+	else if(tbb == 0xFF01)
+		this->SfcType = SFC_BIG_ON_BIG;
+	else if(this->FileSize == FLASH_4_GB) {
+		this->SfcType = SFC_EMMC;
+		this->PageSize = 512;
+		this->PageDataSize = 512;
 	}
 
+	if(this->FileSize != FLASH_4_GB) {
+		this->PageSize = 528;
+		this->PageDataSize = 512;
+	}
+}
+
+VOID FlashImage::GuessSfcTypeForBytes() {
+	if(this->pbEccData[0x210] == 0x01)
+		this->SfcType = SFC_SMALL_ON_SMALL;
+	else if(this->pbEccData[0x211] == 0x01)
+		this->SfcType = SFC_SMALL_ON_BIG;
+	else if(bswap16(*(PWORD)(this->pbEccData + 0x1010)) == 0xFF01)
+		this->SfcType = SFC_BIG_ON_BIG;
+	else if(this->FileSize == FLASH_4_GB) {
+		this->SfcType = SFC_EMMC;
+		this->PageSize = 512;
+		this->PageDataSize = 512;
+	}
+
+	if(this->FileSize != FLASH_4_GB) {
+		this->PageSize = 528;
+		this->PageDataSize = 512;
+	}
+}
+
+VOID FlashImage::ParseImage() {
 	// flash header parsing
 	this->pFlashHdr = (PFLASH_HDR)this->pbFlashData;
 	this->EndianSwapFlashHeader(this->pFlashHdr);  // swap to LE
@@ -274,6 +308,9 @@ BOOL FlashImage::RebuildImage(DWORD oldBlSize) {
 	} else
 		this->FileSize += this->EccSize;
 	this->PageCount = this->FileSize / this->PageSize;
+
+	// check the SFC type
+	// this->GuessSfcTypeForBytes();
 	
 	// parse the new image
 	this->ParseImage();
@@ -281,7 +318,7 @@ BOOL FlashImage::RebuildImage(DWORD oldBlSize) {
 	return TRUE;
 }
 
-VOID FlashImage::EndianSwapImageData(PBYTE data) {
+VOID FlashImage::EndianSwapImageData() {
 	// image must be parsed first!
 
 	// flash header
@@ -386,7 +423,7 @@ BOOL FlashImage::ReplaceBootloader(PBYTE data, DWORD size) {
 	return TRUE;
 }
 
-BOOL FlashImage::PatchBootloader(PATCH_BL target, PBYTE data, DWORD size) {
+BOOL FlashImage::PatchBootloader(PATCH_BL target, PBYTE data) {
 	PBYTE pbBlData;
 	switch(target) {
 		case PATCH_2BL: {
@@ -426,7 +463,7 @@ BOOL FlashImage::PatchBootloader(PATCH_BL target, PBYTE data, DWORD size) {
 VOID FlashImage::Output(PCHAR fileName) {
 	PBYTE pbOutData = (PBYTE)malloc(this->FileSize);
 	PBYTE pbOutTmp = pbOutData;
-	this->EndianSwapImageData(this->pbFlashData);  // swap to BE
+	this->EndianSwapImageData();  // swap to BE
 	for(DWORD pageNum = 0; pageNum < this->PageCount; pageNum++) {
 		// recalculate ecc bits
 		if(this->SfcType != SFC_EMMC)
@@ -440,5 +477,5 @@ VOID FlashImage::Output(PCHAR fileName) {
 	}
 	Utils::WriteFile(fileName, pbOutData, this->FileSize);
 	free(pbOutData);
-	this->EndianSwapImageData(this->pbFlashData);  // swap to LE
+	this->EndianSwapImageData();  // swap to LE
 }
