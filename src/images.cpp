@@ -136,6 +136,7 @@ VOID FlashImage::ParseImage() {
 	Crypto::XeCryptRc4(this->CeSe5blKey, 0x10, this->pbCeSe5blData, this->pCeSe5blHdr->Size - sizeof(BL_HDR_WITH_NONCE), this->pbCeSe5blData);
 
 	// calculate the total size of the bootloaders
+	this->TotalBootloaderSize = 0;
 	this->TotalBootloaderSize += this->pCbaSb2blHdr->Size;
 	this->TotalBootloaderSize += this->pCbbSc3blHdr->Size;
 	this->TotalBootloaderSize += this->pCdSd4blHdr->Size;
@@ -458,6 +459,18 @@ BOOL FlashImage::PatchBootloader(PATCH_BL target, PBYTE data) {
 	}
 
 	return TRUE;
+}
+
+BOOL FlashImage::Patch2BL(PBYTE data) {
+	return this->PatchBootloader(PATCH_2BL, data);
+}
+
+BOOL FlashImage::Patch3BL(PBYTE data) {
+	return this->PatchBootloader(PATCH_3BL, data);
+}
+
+BOOL FlashImage::Patch4BL(PBYTE data) {
+	return this->PatchBootloader(PATCH_4BL, data);
 }
 
 VOID FlashImage::Output(PCHAR fileName) {

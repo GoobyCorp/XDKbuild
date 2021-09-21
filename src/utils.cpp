@@ -17,16 +17,16 @@ VOID Utils::PrintHex(PBYTE data, DWORD size) {
 	printf("\n");
 }
 
-int Utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
+BOOL Utils::HexDecode(PCHAR pcHex, PBYTE pbOut) {
 	if(strlen(pcHex) % 2 != 0)
-		return 0;
+		return FALSE;
 
-	while(*pbOut && pcHex[1])
+	while(*pcHex && pcHex[1])
 	{
 		*(pbOut++) = (char2int(*pcHex) * 16) + char2int(pcHex[1]);
 		pcHex += 2;
 	}
-	return 0;
+	return TRUE;
 }
 
 DWORD Utils::GetFileSize(FILE* f) {

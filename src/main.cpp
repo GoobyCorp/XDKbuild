@@ -148,8 +148,7 @@ VOID BuildBootBlk()
 }
 */
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 	// usage
 	if(argc != 4) {
 		printf("Usage: XDKbuild v0.06b [input image file] [1bl_key] [output image file]\n");

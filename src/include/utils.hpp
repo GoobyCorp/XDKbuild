@@ -1,7 +1,7 @@
 class Utils {
     public:
         static VOID PrintHex(PBYTE data, DWORD size);
-        static int HexDecode(PCHAR pcHex, PBYTE pbOut);
+        static BOOL HexDecode(PCHAR pcHex, PBYTE pbOut);
         static DWORD GetFileSize(FILE* fptr);
         static VOID DumpBufferHex(PCHAR filename, PVOID buffer, int size);
         static PBYTE ReadFile(PCHAR fname, PDWORD pdwSize);

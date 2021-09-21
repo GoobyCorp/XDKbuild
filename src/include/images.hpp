@@ -12,7 +12,9 @@ class FlashImage {
         ~FlashImage();
 
         BOOL ReplaceBootloader(PBYTE data, DWORD size);
-        BOOL PatchBootloader(PATCH_BL bl, PBYTE data);
+        BOOL Patch2BL(PBYTE data);
+        BOOL Patch3BL(PBYTE data);
+        BOOL Patch4BL(PBYTE data);
         VOID Output(PCHAR fileName);
     private:
         // pointers
@@ -53,6 +55,7 @@ class FlashImage {
         VOID EndianSwapImageData();
         VOID EndianSwapFlashHeader(PFLASH_HDR fhdr);
         VOID EndianSwapBootloaderHeader(PBL_HDR bhdr);
+        BOOL PatchBootloader(PATCH_BL bl, PBYTE data);
         VOID EndianSwapBootloaderHeader(PBL_HDR_WITH_NONCE bhdr);
         VOID GenerateKeys(BOOL devkit);
         BOOL RebuildImage(DWORD oldBlSize);
